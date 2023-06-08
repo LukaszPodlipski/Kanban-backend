@@ -1,0 +1,4 @@
+id,name,description,createdById,assigneeId,projectId,projectColumnId,order
+1,Pierwszy task,Opis pierwszego taska,1,1,1,1,2
+2,Drugi task,Opis drugiego taska,1,1,1,2,1
+3,Trzeci task,Opis trzeciego taska,1,1,1,1,1

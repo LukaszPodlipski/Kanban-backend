@@ -1,11 +1,9 @@
-import express from 'express';
-const app = express();
-const port = 4000;
+import { startServer } from './server';
+import { config } from './config';
 
-app.get('/', (req, res) => {
-  res.send('Hello, Express.js!');
-});
+const databaseConfig = {
+  dropDb: process.argv.includes('--drop'),
+  seedDb: process.argv.includes('--seed'),
+};
 
-app.listen(port, () => {
-  console.log(`Server running on port ${port}`);
-});
+startServer(config.server, databaseConfig);
