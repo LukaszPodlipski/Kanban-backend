@@ -40,8 +40,8 @@ const startServer = async ({ port, corsOptions, limiter }: TServerConfig, { drop
   app.use(bodyParser.urlencoded({ extended: true })); // For parsing URL-encoded data
 
   // Routes
-  app.use('/login', authRouter);
-  app.use('/projects', projectsRouter);
+  app.use('/api/login', authRouter);
+  app.use('/api/projects', projectsRouter);
   // app.use('/users', usersRouter);
 
   // Start the server

@@ -31,19 +31,38 @@ export class User implements IUser {
   }
 }
 
-export interface ISimplifiedUser extends Omit<IUser, 'password' | 'email'> {
-  fullName: string;
+export interface ISimplifiedUser {
+  id: number;
+  name?: string;
+  surname?: string;
+  fullName?: string;
 }
 
 export class SimplifiedUser implements ISimplifiedUser {
   id: number;
-  name: string;
-  surname: string;
+  name?: string;
+  surname?: string;
   fullName: string;
 
   constructor(data: IUser) {
     this.id = data.id;
     this.fullName = `${data.name} ${data.surname}`;
+  }
+}
+
+export type IUserResponse = Omit<IUser, keyof IDatabaseColumn | 'password'>;
+
+export class UserResponse implements IUserResponse {
+  id: number;
+  name: string;
+  surname: string;
+  email: string;
+
+  constructor(data: IUser) {
+    this.id = data.id;
+    this.name = data.name;
+    this.surname = data.surname;
+    this.email = data.email;
   }
 }
 
@@ -79,7 +98,7 @@ export class ProjectListItem implements Pick<IProject, 'id' | 'name'> {
   }
 }
 
-export interface IProjectResponse extends Omit<IProject, 'createdAt' | 'updatedAt'> {
+export interface IProjectResponse extends Omit<IProject, keyof IDatabaseColumn> {
   userId?: number;
   columns: IProjectColumnResponse[];
 }
@@ -119,12 +138,14 @@ export class ProjectUser implements IProjectUser {
     this.projectId = data.projectId;
   }
 }
+
 /* -------------------------------- PROJECT COLUMN ------------------------------- */
 export interface IProjectColumn extends IDatabaseColumn {
   id: number;
   name: string;
   projectId: number;
   order: number;
+  tasks?: ITask[];
 }
 
 export class ProjectColumn implements IProjectColumn {
@@ -134,10 +155,10 @@ export class ProjectColumn implements IProjectColumn {
   order: number;
 
   constructor(data: IProjectColumn) {
-    this.id = data.id;
-    this.name = data.name;
-    this.projectId = data.projectId;
-    this.order = data.order;
+    this.id = data.id || null;
+    this.name = data.name || null;
+    this.projectId = data.projectId || null;
+    this.order = data.order || null;
   }
 }
 
@@ -151,9 +172,9 @@ export class ProjectColumnResponse implements IProjectColumnResponse {
   tasks: ITaskResponse[];
 
   constructor(data: IProjectColumnResponse) {
-    this.id = data.id;
-    this.name = data.name;
-    this.tasks = data.tasks;
+    this.id = data.id || null;
+    this.name = data.name || null;
+    this.tasks = data.tasks || null;
   }
 }
 
@@ -180,34 +201,43 @@ export class Task implements ITask {
   order: number;
 
   constructor(data: ITask) {
-    this.id = data.id;
-    this.name = data.name;
-    this.description = data.description;
-    this.createdById = data.createdById;
-    this.assigneeId = data.assigneeId;
-    this.projectId = data.projectId;
-    this.projectColumnId = data.projectColumnId;
-    this.order = data.order;
+    this.id = data.id || null;
+    this.name = data.name || null;
+    this.description = data.description || null;
+    this.createdById = data.createdById || null;
+    this.assigneeId = data.assigneeId || null;
+    this.projectId = data.projectId || null;
+    this.projectColumnId = data.projectColumnId || null;
+    this.order = data.order || null;
   }
 }
 
-export type ITaskResponse = Omit<ITask, 'projectId' | 'createdAt' | 'updatedAt' | 'order'>;
+export interface ITaskResponse extends Omit<ITask, 'projectId' | 'order' | 'createdById' | 'assigneeId'> {
+  createdBy: ISimplifiedUser;
+  assignee: ISimplifiedUser;
+}
 
 export class TaskResponse implements ITaskResponse {
   id: number;
   name: string;
   description: string;
-  createdById: number;
-  assigneeId: number;
+  createdBy: ISimplifiedUser;
+  assignee: ISimplifiedUser;
   projectColumnId: number;
 
   constructor(data: ITaskResponse) {
-    this.id = data.id;
-    this.name = data.name;
-    this.description = data.description;
-    this.createdById = data.createdById;
-    this.assigneeId = data.assigneeId;
-    this.projectColumnId = data.projectColumnId;
+    this.id = data.id || null;
+    this.name = data.name || null;
+    this.description = data.description || null;
+    this.createdBy = {
+      id: data.createdBy.id || null,
+      fullName: `${data.createdBy.name} ${data.createdBy.surname}`,
+    };
+    this.assignee = {
+      id: data.assignee.id || null,
+      fullName: `${data.assignee.name} ${data.assignee.surname}`,
+    };
+    this.projectColumnId = data.projectColumnId || null;
   }
 }
 
@@ -225,7 +255,7 @@ export interface ILoginBodyPayload {
 }
 
 /* --- REQUEST ---*/
-export interface IUnAuthenticatedRequest<T> extends Request {
+export interface IUnauthenticatedRequest<T> extends Request {
   body: T;
 }
 

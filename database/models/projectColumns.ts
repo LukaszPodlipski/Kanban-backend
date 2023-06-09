@@ -2,6 +2,7 @@ import { DataTypes, Model } from 'sequelize';
 import sequelize from '../index';
 import { IProjectColumn } from 'database/types';
 import ProjectsModel from './projects';
+import TasksModel from './tasks';
 
 interface ProjectColumnModel extends Model<IProjectColumn>, IProjectColumn {}
 
@@ -29,7 +30,9 @@ const ProjectColumnsModel = sequelize.define<ProjectColumnModel>('projectColumns
   },
 });
 
-ProjectColumnsModel.belongsTo(ProjectsModel, { foreignKey: 'projectId' });
 ProjectsModel.hasMany(ProjectColumnsModel, { foreignKey: 'projectId' });
+ProjectColumnsModel.belongsTo(ProjectsModel, { foreignKey: 'projectId' });
 
+ProjectColumnsModel.hasMany(TasksModel, { foreignKey: 'projectColumnId' });
+TasksModel.belongsTo(ProjectColumnsModel, { foreignKey: 'projectColumnId' });
 export default ProjectColumnsModel;

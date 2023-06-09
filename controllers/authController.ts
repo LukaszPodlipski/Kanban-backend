@@ -3,7 +3,7 @@ import { verifyPassword, errorHandler } from './utils';
 
 import { StatusCodes } from 'http-status-codes';
 
-import { IUser, ILoginBodyPayload, IUnAuthenticatedRequest } from '../database/types';
+import { IUser, ILoginBodyPayload, IUnauthenticatedRequest, UserResponse } from '../database/types';
 import { Response } from 'express';
 import { loginSchema } from './validationSchemas';
 
@@ -24,7 +24,7 @@ export const getValidatedUser = async (payload: ILoginBodyPayload): Promise<IUse
   return user;
 };
 
-export const login = async (req: IUnAuthenticatedRequest<{ email: string; password: string }>, res: Response) => {
+export const login = async (req: IUnauthenticatedRequest<{ email: string; password: string }>, res: Response) => {
   try {
     const user: IUser = await getValidatedUser(req.body);
 
@@ -33,10 +33,10 @@ export const login = async (req: IUnAuthenticatedRequest<{ email: string; passwo
     }
 
     // Generate JWT token
-    const token = jwt.sign({ id: user.id, email: user.email }, secretKey, { expiresIn: '1h' });
+    const token = jwt.sign({ id: user.id, email: user.email }, secretKey, { expiresIn: '24h' });
 
     // Return token as response
-    res.json({ token });
+    res.json({ token, user: new UserResponse(user) });
   } catch (err) {
     errorHandler(err, res);
   }

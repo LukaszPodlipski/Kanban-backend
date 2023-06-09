@@ -2,8 +2,12 @@ import { DataTypes, Model } from 'sequelize';
 import sequelize from '../index';
 import { IProject } from 'database/types';
 import UsersModel from './users';
+import ProjectUsersModel from './projectUsers';
+import { IProjectColumnResponse } from 'database/types';
 
-interface ProjectModel extends Model<IProject>, IProject {}
+interface ProjectModel extends Model<IProject>, IProject {
+  projectColumns: IProjectColumnResponse[];
+}
 
 const ProjectsModel = sequelize.define<ProjectModel>('projects', {
   id: {
@@ -22,13 +26,9 @@ const ProjectsModel = sequelize.define<ProjectModel>('projects', {
   ownerId: {
     type: DataTypes.INTEGER,
     allowNull: false,
-    references: {
-      model: 'users',
-      key: 'id',
-    },
   },
 });
 
-ProjectsModel.belongsTo(UsersModel, { foreignKey: 'ownerId' });
-
+ProjectsModel.belongsToMany(UsersModel, { through: ProjectUsersModel, foreignKey: 'projectId' });
+UsersModel.belongsToMany(ProjectsModel, { through: ProjectUsersModel, foreignKey: 'userId' });
 export default ProjectsModel;
