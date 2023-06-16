@@ -100,7 +100,8 @@ export class ProjectListItem implements Pick<IProject, 'id' | 'name'> {
 
 export interface IProjectResponse extends Omit<IProject, keyof IDatabaseColumn> {
   userId?: number;
-  columns: IProjectColumnResponse[];
+  columns?: IProjectColumnResponse[];
+  tasks?: ITaskResponse[];
 }
 
 export class ProjectResponse implements IProjectResponse {
@@ -110,13 +111,15 @@ export class ProjectResponse implements IProjectResponse {
   ownerId: number;
   isOwner: boolean;
   columns: IProjectColumnResponse[];
+  tasks: ITaskResponse[];
 
   constructor(data: IProjectResponse) {
     this.id = data.id;
     this.name = data.name;
     this.description = data.description;
     this.isOwner = data?.ownerId === data?.userId || false;
-    this.columns = data.columns;
+    this.columns = data.columns || [];
+    this.tasks = data.tasks || [];
   }
 }
 
@@ -163,18 +166,16 @@ export class ProjectColumn implements IProjectColumn {
 }
 
 export interface IProjectColumnResponse extends Pick<IProjectColumn, 'id' | 'name'> {
-  tasks: ITaskResponse[];
+  tasks?: ITaskResponse[];
 }
 
 export class ProjectColumnResponse implements IProjectColumnResponse {
   id: number;
   name: string;
-  tasks: ITaskResponse[];
 
   constructor(data: IProjectColumnResponse) {
     this.id = data.id || null;
     this.name = data.name || null;
-    this.tasks = data.tasks || null;
   }
 }
 
@@ -212,7 +213,7 @@ export class Task implements ITask {
   }
 }
 
-export interface ITaskResponse extends Omit<ITask, 'projectId' | 'order' | 'createdById' | 'assigneeId'> {
+export interface ITaskResponse extends Omit<ITask, 'projectId' | 'createdById' | 'assigneeId'> {
   createdBy: ISimplifiedUser;
   assignee: ISimplifiedUser;
 }
@@ -224,11 +225,13 @@ export class TaskResponse implements ITaskResponse {
   createdBy: ISimplifiedUser;
   assignee: ISimplifiedUser;
   projectColumnId: number;
+  order: number;
 
   constructor(data: ITaskResponse) {
     this.id = data.id || null;
     this.name = data.name || null;
     this.description = data.description || null;
+    this.order = data.order || 0;
     this.createdBy = {
       id: data.createdBy.id || null,
       fullName: `${data.createdBy.name} ${data.createdBy.surname}`,

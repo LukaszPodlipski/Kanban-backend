@@ -4,9 +4,9 @@ import {
   IAuthenticatedRequest,
   IAuthenticatedRequestWithBody,
   ISpecificProjectParams,
-  ProjectListItem,
   IProjectResponse,
   ProjectResponse,
+  ProjectListItem,
   ProjectColumnResponse,
   TaskResponse,
 } from '../database/types';
@@ -82,41 +82,17 @@ export const getUserSingleProject = async (req: IAuthenticatedRequest & { params
       ],
     });
 
-    const completeProject: IProjectResponse = new ProjectResponse({
+    const projectResponse: IProjectResponse = new ProjectResponse({
       id: project.id,
       name: project.name,
       description: project.description,
       ownerId: project.ownerId,
       userId: userId,
-      columns: project.projectColumns.map(
-        (column) =>
-          new ProjectColumnResponse({
-            id: column.id,
-            name: column.name,
-            tasks: column.tasks.map(
-              (task) =>
-                new TaskResponse({
-                  id: task.id,
-                  name: task.name,
-                  description: task.description,
-                  projectColumnId: task.projectColumnId,
-                  createdBy: {
-                    id: task.createdBy.id,
-                    name: task.createdBy.name,
-                    surname: task.createdBy.surname,
-                  },
-                  assignee: {
-                    id: task.assignee.id,
-                    name: task.assignee.name,
-                    surname: task.createdBy.surname,
-                  },
-                })
-            ),
-          })
-      ),
+      columns: project.projectColumns.map((column) => new ProjectColumnResponse(column)),
+      tasks: project.projectColumns.flatMap((column) => column.tasks.map((task) => new TaskResponse(task))),
     });
 
-    res.json(completeProject);
+    res.json(projectResponse);
   } catch (err) {
     errorHandler(err, res);
   }
