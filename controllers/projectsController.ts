@@ -12,7 +12,7 @@ import {
 } from '../database/types';
 import { errorHandler } from './utils';
 
-import { specificProjectParamsSchema, createColumnBodySchema, createTaskBodySchema } from './validationSchemas';
+import { specificProjectParamsSchema, createColumnBodySchema } from './validationSchemas';
 
 import ProjectsModel from '../database/models/projects';
 import ProjectUsersModel from '../database/models/projectUsers';
@@ -57,6 +57,7 @@ export const getUserSingleProject = async (req: IAuthenticatedRequest & { params
 
     if (!projectUser) {
       res.status(StatusCodes.NOT_FOUND).json({ error: 'Project not found' });
+      return;
     }
 
     const project = await ProjectsModel.findByPk(projectId, {
@@ -129,53 +130,6 @@ export async function createColumn(
     });
 
     return res.status(StatusCodes.CREATED).json(column);
-  } catch (err) {
-    errorHandler(err, res);
-  }
-}
-
-/* -------------------------------- CREATE NEW TASK --------------------------------- */
-
-export async function createTask(
-  req: IAuthenticatedRequestWithBody<{
-    description: string;
-    name: string;
-    createdById: number;
-    assigneeId: number;
-    projectColumnId: number;
-  }> & { params: ISpecificProjectParams },
-  res: Response
-) {
-  try {
-    await specificProjectParamsSchema.validate(req.params);
-    await createTaskBodySchema.validate(req.body);
-
-    const projectId = Number(req.params.projectId);
-
-    const { name, description, assigneeId, projectColumnId } = req.body;
-
-    const tasks = await TasksModel.findAll({ where: { projectColumnId } });
-
-    const order = tasks.length + 1;
-
-    const createdById = req.user.id;
-
-    const project = await ProjectsModel.findByPk(projectId);
-    if (!project) {
-      return res.status(404).json({ error: 'Project not found' });
-    }
-
-    const task = await TasksModel.create({
-      name,
-      description,
-      createdById,
-      assigneeId,
-      projectId,
-      projectColumnId,
-      order,
-    });
-
-    return res.status(201).json(task);
   } catch (err) {
     errorHandler(err, res);
   }

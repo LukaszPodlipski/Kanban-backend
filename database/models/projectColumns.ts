@@ -28,6 +28,9 @@ const ProjectColumnsModel = sequelize.define<ProjectColumnModel>('projectColumns
     type: DataTypes.INTEGER,
     allowNull: false,
   },
+  color: {
+    type: DataTypes.STRING,
+  },
 });
 
 ProjectsModel.hasMany(ProjectColumnsModel, { foreignKey: 'projectId' });

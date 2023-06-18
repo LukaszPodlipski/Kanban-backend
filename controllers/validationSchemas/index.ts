@@ -20,3 +20,8 @@ export const createTaskBodySchema = yup.object().shape({
   assigneeId: yup.number().moreThan(0),
   projectColumnId: yup.number().moreThan(0),
 });
+
+export const moveTaskBodySchema = yup.object().shape({
+  targetColumnId: yup.number().required('To column id is required').moreThan(0),
+  targetIndex: yup.string().required('To index is required'),
+});

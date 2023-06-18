@@ -148,6 +148,7 @@ export interface IProjectColumn extends IDatabaseColumn {
   name: string;
   projectId: number;
   order: number;
+  color: string;
   tasks?: ITask[];
 }
 
@@ -156,26 +157,32 @@ export class ProjectColumn implements IProjectColumn {
   name: string;
   projectId: number;
   order: number;
+  color: string;
 
   constructor(data: IProjectColumn) {
     this.id = data.id || null;
     this.name = data.name || null;
     this.projectId = data.projectId || null;
     this.order = data.order || null;
+    this.color = data.color || null;
   }
 }
 
-export interface IProjectColumnResponse extends Pick<IProjectColumn, 'id' | 'name'> {
+export interface IProjectColumnResponse extends Pick<IProjectColumn, 'id' | 'name' | 'order' | 'color'> {
   tasks?: ITaskResponse[];
 }
 
 export class ProjectColumnResponse implements IProjectColumnResponse {
   id: number;
   name: string;
+  color: string;
+  order: number;
 
   constructor(data: IProjectColumnResponse) {
     this.id = data.id || null;
     this.name = data.name || null;
+    this.color = data.color || null;
+    this.order = data.order || null;
   }
 }
 
