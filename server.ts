@@ -1,16 +1,18 @@
 import express, { Application } from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
-import limit from 'express-rate-limit';
 import { CorsOptions } from 'cors';
-
+import limit from 'express-rate-limit';
 import bodyParser from 'body-parser';
+
+import { startWebsocketServer } from './websocket';
+
 import sequelize from './database';
 import { seedDatabase, dropDatabase } from './database/seed';
+
 import authRouter from './routes/authRouter';
 import projectsRouter from './routes/projectsRouter';
 import tasksRouter from './routes/tasksRouter';
-// import usersRouter from './routes/usersRouter';
 
 export type TServerConfig = {
   port: number;
@@ -44,7 +46,6 @@ const startServer = async ({ port, corsOptions, limiter }: TServerConfig, { drop
   app.use('/api/login', authRouter);
   app.use('/api/projects', projectsRouter);
   app.use('/api/tasks', tasksRouter);
-  // app.use('/users', usersRouter);
 
   // Start the server
   await new Promise<void>((resolve, reject) => {
@@ -59,6 +60,8 @@ const startServer = async ({ port, corsOptions, limiter }: TServerConfig, { drop
       .on('error', (error: Error) => {
         reject(error);
       });
+
+    startWebsocketServer();
   });
 };
 

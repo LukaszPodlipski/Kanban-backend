@@ -6,7 +6,10 @@ import { errorHandler } from './utils';
 import { specificProjectParamsSchema, createTaskBodySchema, moveTaskBodySchema } from './validationSchemas';
 
 import ProjectsModel from '../database/models/projects';
+import ProjectUsers from '../database/models/projectUsers';
 import TasksModel from '../database/models/tasks';
+
+import { sendWebSocketMessage } from '../websocket';
 
 /* -------------------------------- CREATE NEW TASK --------------------------------- */
 
@@ -123,6 +126,14 @@ export async function moveTask(
         }
       );
     }
+
+    const permittedUsers = await ProjectUsers.findAll({ where: { projectId: movedTask.projectId } }).then((users) =>
+      users.map((user) => user.userId)
+    );
+
+    const updatedTask = updatedTasks.find((task) => task.id === movedTask.id);
+
+    sendWebSocketMessage(updatedTask, 'TasksIndexChannel', permittedUsers, 'update');
 
     return res.status(200).send();
   } catch (err) {
