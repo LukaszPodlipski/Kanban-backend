@@ -1,4 +1,5 @@
 import { WebSocketServer, WebSocket } from 'ws';
+import { URLSearchParams } from 'url';
 import jwt from 'jsonwebtoken';
 
 let _wss = null;
@@ -6,18 +7,23 @@ let _wss = null;
 const availableChannels = ['TasksIndexChannel'];
 
 const connectedClients: Set<WebSocket> = new Set();
-const clientUserIds: Map<WebSocket, string> = new Map();
+const clientUserIds: Map<WebSocket, number> = new Map();
 const clientChannels: Map<WebSocket, string> = new Map();
+
+interface JwtPayload {
+  id: number;
+}
 
 const startWebsocketServer = async () => {
   _wss = new WebSocketServer({ port: 8080 });
   const secretKey = process.env.SECRET_KEY;
 
   _wss.on('connection', function connection(ws, request) {
-    const token = request.headers['authorization'];
+    const urlParams = new URLSearchParams(request.url.split('?')[1]);
+    const token = urlParams.get('Authorization');
 
-    jwt.verify(token, secretKey, (err, decoded) => {
-      const userId = decoded.id;
+    jwt.verify(token, secretKey, (err, decoded: JwtPayload) => {
+      const userId = decoded?.id;
 
       // Handle invalid token
       if (err) {
