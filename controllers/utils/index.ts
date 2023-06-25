@@ -33,8 +33,8 @@ export const verifyPassword = (password: string, hash: string) => {
 };
 
 export const compareObjects = (objectA, objectB) => {
-  const keysA = Object.keys(objectA);
-  const keysB = Object.keys(objectB);
+  const keysA = Object.keys(objectA) || [];
+  const keysB = Object.keys(objectB) || [];
 
   if (keysA.length !== keysB.length) {
     return false;
