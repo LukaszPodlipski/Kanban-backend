@@ -205,8 +205,16 @@ export async function moveTask(
 
     // 12. send websocket message with all updated tasks
     [...updatedTasksInTargetColumn, ...updatedTasksInSourceColumn].forEach(async (task) => {
-      const payload = await getTaskResponse(task);
-      sendWebSocketMessage(payload, 'TasksIndexChannel', permittedUsers, 'update', 'task');
+      const taskResponse = await getTaskResponse(task);
+      const payload = {
+        data: taskResponse,
+        itemType: 'task',
+        messageType: 'update',
+        channel: 'TasksIndexChannel',
+        channelParams: { projectId: task.projectId },
+        receiversIds: permittedUsers,
+      };
+      sendWebSocketMessage(payload);
     });
 
     return res.status(StatusCodes.OK).send();
