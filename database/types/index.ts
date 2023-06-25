@@ -238,6 +238,7 @@ export class TaskResponse implements ITaskResponse {
     this.id = data.id || null;
     this.name = data.name || null;
     this.description = data.description || null;
+    this.projectColumnId = data.projectColumnId || null;
     this.order = data.order || 0;
     this.createdBy = {
       id: data.createdBy.id || null,

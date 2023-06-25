@@ -93,7 +93,7 @@ const startWebsocketServer = async () => {
   });
 };
 
-const sendWebSocketMessage = (data: unknown, channel, receiversIds, messageType) => {
+const sendWebSocketMessage = (data: unknown, channel, receiversIds, messageType, itemType) => {
   connectedClients.forEach((client) => {
     const receiverId = clientUserIds.get(client);
     const clientChannel = clientChannels.get(client);
@@ -104,6 +104,7 @@ const sendWebSocketMessage = (data: unknown, channel, receiversIds, messageType)
           channel,
         },
         message: {
+          itemType,
           actionType: messageType,
           data,
         },
