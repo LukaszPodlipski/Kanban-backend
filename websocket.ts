@@ -74,7 +74,7 @@ const startWebsocketServer = async () => {
         try {
           const payload = JSON.parse(data);
           const channel = payload?.identifier?.channel || '';
-          const params = payload?.identifier?.params || null;
+          const params = payload?.identifier?.params || {};
 
           if (payload?.command === 'subscribe') {
             if (availableChannels.includes(channel)) {
