@@ -28,6 +28,10 @@ const ProjectsModel = sequelize.define<ProjectModel>('projects', {
     type: DataTypes.INTEGER,
     allowNull: false,
   },
+  prefix: {
+    type: DataTypes.STRING(3),
+    allowNull: false,
+  },
 });
 
 ProjectsModel.belongsToMany(UsersModel, { through: ProjectUsersModel, foreignKey: 'projectId' });

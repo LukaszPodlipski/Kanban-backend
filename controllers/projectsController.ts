@@ -90,6 +90,7 @@ export const getUserSingleProject = async (req: IAuthenticatedRequest & { params
       id: project.id,
       name: project.name,
       description: project.description,
+      prefix: project.prefix,
       ownerId: project.ownerId,
       userId: userId,
       columns: project.projectColumns.map((column) => new ProjectColumnResponse(column)),

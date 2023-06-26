@@ -83,6 +83,7 @@ export interface IProject extends IDatabaseColumn {
   name: string;
   description?: string;
   ownerId: number;
+  prefix: string;
 }
 
 export class Project implements IProject {
@@ -90,12 +91,14 @@ export class Project implements IProject {
   name: string;
   description?: string;
   ownerId: number;
+  prefix: string;
 
   constructor(data: IProject) {
     this.id = data.id;
     this.name = data.name;
     this.description = data.description;
     this.ownerId = data.ownerId;
+    this.prefix = data.prefix;
   }
 }
 
@@ -120,6 +123,7 @@ export class ProjectResponse implements IProjectResponse {
   id: number;
   name: string;
   description?: string;
+  prefix: string;
   ownerId: number;
   isOwner: boolean;
   columns: IProjectColumnResponse[];
@@ -130,6 +134,7 @@ export class ProjectResponse implements IProjectResponse {
     this.id = data.id;
     this.name = data.name;
     this.description = data.description;
+    this.prefix = data.prefix;
     this.isOwner = data?.ownerId === data?.userId || false;
     this.columns = data.columns || [];
     this.tasks = data.tasks || [];
@@ -210,6 +215,7 @@ export interface ITask extends IDatabaseColumn {
   projectId: number;
   projectColumnId: number;
   order: number;
+  identifier: string;
 }
 
 export class Task implements ITask {
@@ -221,6 +227,7 @@ export class Task implements ITask {
   projectId: number;
   projectColumnId: number;
   order: number;
+  identifier: string;
 
   constructor(data: ITask) {
     this.id = data.id || null;
@@ -231,6 +238,7 @@ export class Task implements ITask {
     this.projectId = data.projectId || null;
     this.projectColumnId = data.projectColumnId || null;
     this.order = data.order || null;
+    this.identifier = data.identifier || null;
   }
 }
 
@@ -247,6 +255,7 @@ export class TaskResponse implements ITaskResponse {
   assignee: ISimplifiedUser;
   projectColumnId: number;
   order: number;
+  identifier: string;
 
   constructor(data: ITaskResponse) {
     this.id = data.id || null;
@@ -265,6 +274,7 @@ export class TaskResponse implements ITaskResponse {
       avatarUrl: data.assignee.avatarUrl || null,
     };
     this.projectColumnId = data.projectColumnId || null;
+    this.identifier = data.identifier || null;
   }
 }
 
