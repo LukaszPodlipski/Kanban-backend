@@ -1,2 +1,5 @@
-id,name,surname,email,password
-1,Łukasz,Podlipski,lukaszpodlipskikontakt@gmail.com,admin1234
+id,name,surname,email,password,avatarUrl
+1,Łukasz,Podlipski,lukaszpodlipskikontakt@gmail.com,admin1234,https://img.freepik.com/free-vector/businessman-character-avatar-isolated_24877-60111.jpg?w=1380&t=st=1687798850~exp=1687799450~hmac=d239fcd494c46c6a68bafa6d4ddb969d2c96f992be04bc37b94c46bcc1370ff6
+2,Andrzej,Podlipski,andrzejpodlipski@gmail.com,admin1234,https://www.w3schools.com/howto/img_avatar.png
+3,Jan,Kowalski,jakkowalski@gmail.com,admin1234,https://www.w3schools.com/w3images/avatar2.png
+4,Adam,Mickiewicz,adammickiewicz@gmail.com,admin1234,https://static.vecteezy.com/ti/vetor-gratis/p3/14391422-de-icone-de-avatar-de-homem-plano-vetor.jpg

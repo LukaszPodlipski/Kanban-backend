@@ -9,6 +9,7 @@ import {
   ProjectListItem,
   ProjectColumnResponse,
   TaskResponse,
+  SimplifiedUser,
 } from '../database/types';
 import { errorHandler } from './utils';
 
@@ -29,6 +30,7 @@ export const getUserProjectsList = async (req: IAuthenticatedRequest, res: Respo
 
     if (!projectsUser.length) {
       res.status(StatusCodes.NOT_FOUND).json({ error: 'User has no projects' });
+      return;
     }
 
     const projectsSimplifiedList = await Promise.all(
@@ -80,6 +82,7 @@ export const getUserSingleProject = async (req: IAuthenticatedRequest & { params
             },
           ],
         },
+        UsersModel,
       ],
     });
 
@@ -91,6 +94,7 @@ export const getUserSingleProject = async (req: IAuthenticatedRequest & { params
       userId: userId,
       columns: project.projectColumns.map((column) => new ProjectColumnResponse(column)),
       tasks: project.projectColumns.flatMap((column) => column.tasks.map((task) => new TaskResponse(task))),
+      members: project.users.map((user) => new SimplifiedUser(user)),
     });
 
     res.json(projectResponse);

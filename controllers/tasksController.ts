@@ -72,19 +72,13 @@ export async function moveTask(
       const createdBy = await Users.findOne({ where: { id: task?.createdById } });
       const assignee = await Users.findOne({ where: { id: task?.assigneeId } });
 
-      const formattedTask = {
+      const completeTask = {
         ...task,
-        assignee: {
-          id: assignee?.id,
-          fullName: `${assignee.name} ${assignee.surname}`,
-        },
-        createdBy: {
-          id: createdBy?.id,
-          fullName: `${createdBy.name} ${createdBy.surname}`,
-        },
+        assignee,
+        createdBy,
       };
 
-      return new TaskResponse(formattedTask);
+      return new TaskResponse(completeTask);
     };
 
     await specificProjectParamsSchema.validate(req.params);

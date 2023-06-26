@@ -1,8 +1,6 @@
-import { DataTypes, Model } from 'sequelize';
+import { DataTypes } from 'sequelize';
 import sequelize from '../index';
-import { IUser } from 'database/types';
-
-interface UserModel extends Model<IUser>, IUser {}
+import { UserModel } from 'database/types';
 
 const UsersModel = sequelize.define<UserModel>('users', {
   id: {
@@ -29,6 +27,10 @@ const UsersModel = sequelize.define<UserModel>('users', {
   password: {
     type: DataTypes.STRING,
     allowNull: false,
+  },
+  avatarUrl: {
+    type: DataTypes.STRING,
+    allowNull: true,
   },
 });
 
