@@ -112,14 +112,12 @@ export class ProjectListItem implements Pick<IProject, 'id' | 'name'> {
   }
 }
 
-export interface IProjectResponse extends Omit<IProject, keyof IDatabaseColumn> {
+export interface IProjectDataResponse extends Omit<IProject, keyof IDatabaseColumn> {
   userId?: number;
-  columns?: IProjectColumnResponse[];
-  tasks?: ITaskResponse[];
   members?: ISimplifiedUser[];
 }
 
-export class ProjectResponse implements IProjectResponse {
+export class ProjectDataResponse implements IProjectDataResponse {
   id: number;
   name: string;
   description?: string;
@@ -130,14 +128,12 @@ export class ProjectResponse implements IProjectResponse {
   tasks: ITaskResponse[];
   members?: ISimplifiedUser[];
 
-  constructor(data: IProjectResponse) {
+  constructor(data: IProjectDataResponse) {
     this.id = data.id;
     this.name = data.name;
     this.description = data.description;
     this.prefix = data.prefix;
     this.isOwner = data?.ownerId === data?.userId || false;
-    this.columns = data.columns || [];
-    this.tasks = data.tasks || [];
     this.members = data.members || [];
   }
 }

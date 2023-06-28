@@ -10,7 +10,6 @@ export const specificProjectParamsSchema = yup.object().shape({
 });
 
 export const createColumnBodySchema = yup.object().shape({
-  order: yup.number().required('Order is required').moreThan(0),
   name: yup.string().required('Name is required'),
 });
 
@@ -24,4 +23,8 @@ export const createTaskBodySchema = yup.object().shape({
 export const moveTaskBodySchema = yup.object().shape({
   targetColumnId: yup.number().required('To column id is required').moreThan(0),
   targetIndex: yup.string().required('To index is required'),
+});
+
+export const getProjectResourceBodySchema = yup.object().shape({
+  projectId: yup.string().required('ProjectId is required'),
 });

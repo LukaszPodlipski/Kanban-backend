@@ -1,7 +1,7 @@
 import { WebSocketServer, WebSocket } from 'ws';
 import { URLSearchParams } from 'url';
 import jwt from 'jsonwebtoken';
-import { compareObjects } from './controllers/utils';
+import { compareObjects } from './helpers/';
 
 let _wss = null;
 
