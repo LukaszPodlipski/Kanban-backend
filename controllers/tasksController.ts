@@ -1,16 +1,51 @@
 import { Response } from 'express';
 import { StatusCodes } from 'http-status-codes';
-import { IAuthenticatedRequestWithBody, ISpecificProjectParams, TaskResponse } from '../database/types';
-import { errorHandler } from './utils';
+import {
+  IAuthenticatedRequestWithBody,
+  IAuthenticatedRequestWithQuery,
+  ISpecificProjectParams,
+  TaskResponse,
+} from '../database/types';
+import { errorHandler, authenticateProjectUser } from './utils';
 
-import { specificProjectParamsSchema, createTaskBodySchema, moveTaskBodySchema } from './validationSchemas';
+import {
+  specificProjectParamsSchema,
+  getProjectResourceParamsSchema,
+  createTaskBodySchema,
+  moveTaskBodySchema,
+} from './validationSchemas';
 
-import ProjectsModel from '../database/models/projects';
 import ProjectUsers from '../database/models/projectUsers';
 import Users from '../database/models/users';
 import TasksModel from '../database/models/tasks';
 
 import { sendWebSocketMessage } from '../websocket';
+
+/* -------------------------------- GET PROJECT TASKS --------------------------------- */
+export async function getProjectTasks(req: IAuthenticatedRequestWithQuery<{ id: string }>, res: Response) {
+  try {
+    await getProjectResourceParamsSchema.validate(req.query);
+    await authenticateProjectUser(req);
+
+    const { id: projectId } = req.query;
+
+    const tasks = await TasksModel.findAll({ where: { projectId } });
+
+    const parsedTasks = await Promise.all(
+      tasks.map(async (task) => {
+        const createdBy = await Users.findOne({ where: { id: task?.createdById } });
+        const assignee = await Users.findOne({ where: { id: task?.assigneeId } });
+
+        return new TaskResponse({ ...task.toJSON(), createdBy, assignee });
+      })
+    );
+
+    res.json(parsedTasks);
+  } catch (err) {
+    console.log('err: ', err);
+    errorHandler(err, res);
+  }
+}
 
 /* -------------------------------- CREATE NEW TASK --------------------------------- */
 
@@ -27,21 +62,16 @@ export async function createTask(
   try {
     await specificProjectParamsSchema.validate(req.params);
     await createTaskBodySchema.validate(req.body);
+    await authenticateProjectUser(req);
 
-    const projectId = Number(req.params.projectId);
+    const { id: projectId } = req.params;
 
     const { name, description, assigneeId, projectColumnId } = req.body;
 
     const tasks = await TasksModel.findAll({ where: { projectColumnId } });
 
     const order = tasks.length + 1;
-
     const createdById = req.user.id;
-
-    const project = await ProjectsModel.findByPk(projectId);
-    if (!project) {
-      return res.status(StatusCodes.NOT_FOUND).json({ error: 'Project not found' });
-    }
 
     const task = await TasksModel.create({
       name,
@@ -72,19 +102,13 @@ export async function moveTask(
       const createdBy = await Users.findOne({ where: { id: task?.createdById } });
       const assignee = await Users.findOne({ where: { id: task?.assigneeId } });
 
-      const formattedTask = {
+      const completeTask = {
         ...task,
-        assignee: {
-          id: assignee?.id,
-          fullName: `${assignee.name} ${assignee.surname}`,
-        },
-        createdBy: {
-          id: createdBy?.id,
-          fullName: `${createdBy.name} ${createdBy.surname}`,
-        },
+        assignee,
+        createdBy,
       };
 
-      return new TaskResponse(formattedTask);
+      return new TaskResponse(completeTask);
     };
 
     await specificProjectParamsSchema.validate(req.params);

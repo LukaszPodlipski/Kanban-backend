@@ -1,6 +1,8 @@
 import bcrypt from 'bcryptjs';
 import { StatusCodes } from 'http-status-codes';
 import { Response } from 'express';
+import ProjectsModel from '../../database/models/projects';
+import ProjectUsers from '../../database/models/projectUsers';
 
 export const hashPassword = (password: string) => {
   return new Promise((resolve, reject) => {
@@ -32,21 +34,26 @@ export const verifyPassword = (password: string, hash: string) => {
   });
 };
 
-export const compareObjects = (objectA, objectB) => {
-  const keysA = Object.keys(objectA) || [];
-  const keysB = Object.keys(objectB) || [];
+export const authenticateProjectUser = (req) => {
+  return new Promise<void>(async (resolve, reject) => {
+    const userId = req?.user?.id || null;
+    const projectId = req?.params?.id || req?.query?.id || null;
 
-  if (keysA.length !== keysB.length) {
-    return false;
-  }
+    const projectUser = await ProjectUsers.findOne({ where: { userId, projectId } });
 
-  for (const key of keysA) {
-    if (!keysB.includes(key) || objectA[key] !== objectB[key]) {
-      return false;
+    if (!projectUser) {
+      reject({ name: 'PermissionError', message: 'User is not the member of this project' });
+      return;
     }
-  }
 
-  return true;
+    const project = await ProjectsModel.findByPk(projectId);
+
+    if (!project) {
+      reject({ name: 'NotFoundError', message: 'Project not found', status: StatusCodes.NOT_FOUND });
+      return;
+    }
+    resolve();
+  });
 };
 
 export const errorHandler = (err: Error, res: Response) => {
@@ -54,7 +61,14 @@ export const errorHandler = (err: Error, res: Response) => {
 
   if (err?.name === 'ValidationError') {
     res.status(StatusCodes.BAD_REQUEST).json({ error: err.message });
+    return;
+  } else if (err.name === 'PermissionError') {
+    res.status(StatusCodes.FORBIDDEN).json({ error: err.message });
+    return;
+  } else if (err.name === 'NotFoundError') {
+    res.status(StatusCodes.NOT_FOUND).json({ error: err.message });
   } else {
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error: 'Internal server error' });
+    return;
   }
 };

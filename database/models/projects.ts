@@ -3,10 +3,11 @@ import sequelize from '../index';
 import { IProject } from 'database/types';
 import UsersModel from './users';
 import ProjectUsersModel from './projectUsers';
-import { IProjectColumnResponse } from 'database/types';
+import { IProjectColumnResponse, UserModel } from 'database/types';
 
 interface ProjectModel extends Model<IProject>, IProject {
   projectColumns: IProjectColumnResponse[];
+  users: UserModel[];
 }
 
 const ProjectsModel = sequelize.define<ProjectModel>('projects', {
@@ -25,6 +26,10 @@ const ProjectsModel = sequelize.define<ProjectModel>('projects', {
   },
   ownerId: {
     type: DataTypes.INTEGER,
+    allowNull: false,
+  },
+  prefix: {
+    type: DataTypes.STRING(3),
     allowNull: false,
   },
 });

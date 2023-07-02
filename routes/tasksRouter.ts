@@ -3,9 +3,10 @@ import { authenticateToken } from '../controllers/authMiddleware';
 
 const router = express.Router();
 
-import { createTask, moveTask } from '../controllers/tasksController';
+import { getProjectTasks, createTask, moveTask } from '../controllers/tasksController';
 
-router.patch('/move/:id', authenticateToken, moveTask);
+router.get('/', authenticateToken, getProjectTasks);
 router.post('/create/:id', authenticateToken, createTask);
+router.patch('/move/:id', authenticateToken, moveTask);
 
 export default router;

@@ -1,10 +1,14 @@
 import { Request } from 'express';
+import { Model } from 'sequelize';
+import { ParsedQs } from 'qs';
 
 /* ------------------------------ DATA BASE ---------------------------- */
 interface IDatabaseColumn {
   createdAt?: Date;
   updatedAt?: Date;
 }
+
+export interface UserModel extends Model<IUser>, IUser {}
 
 /* -------------------------------- USER ------------------------------- */
 export interface IUser extends IDatabaseColumn {
@@ -13,6 +17,7 @@ export interface IUser extends IDatabaseColumn {
   surname: string;
   email: string;
   password: string;
+  avatarUrl?: string;
 }
 
 export class User implements IUser {
@@ -21,6 +26,7 @@ export class User implements IUser {
   surname: string;
   email: string;
   password: string;
+  avatarUrl: string;
 
   constructor(data: IUser) {
     this.id = data.id;
@@ -28,6 +34,7 @@ export class User implements IUser {
     this.surname = data.surname;
     this.email = data.email;
     this.password = data.password;
+    this.avatarUrl = data.avatarUrl || '';
   }
 }
 
@@ -36,6 +43,7 @@ export interface ISimplifiedUser {
   name?: string;
   surname?: string;
   fullName?: string;
+  avatarUrl?: string;
 }
 
 export class SimplifiedUser implements ISimplifiedUser {
@@ -43,10 +51,12 @@ export class SimplifiedUser implements ISimplifiedUser {
   name?: string;
   surname?: string;
   fullName: string;
+  avatarUrl?: string;
 
   constructor(data: IUser) {
     this.id = data.id;
     this.fullName = `${data.name} ${data.surname}`;
+    this.avatarUrl = data.avatarUrl || '';
   }
 }
 
@@ -57,12 +67,14 @@ export class UserResponse implements IUserResponse {
   name: string;
   surname: string;
   email: string;
+  avatarUrl: string;
 
   constructor(data: IUser) {
     this.id = data.id;
     this.name = data.name;
     this.surname = data.surname;
     this.email = data.email;
+    this.avatarUrl = data.avatarUrl || '';
   }
 }
 
@@ -72,6 +84,7 @@ export interface IProject extends IDatabaseColumn {
   name: string;
   description?: string;
   ownerId: number;
+  prefix: string;
 }
 
 export class Project implements IProject {
@@ -79,12 +92,14 @@ export class Project implements IProject {
   name: string;
   description?: string;
   ownerId: number;
+  prefix: string;
 
   constructor(data: IProject) {
     this.id = data.id;
     this.name = data.name;
     this.description = data.description;
     this.ownerId = data.ownerId;
+    this.prefix = data.prefix;
   }
 }
 
@@ -98,28 +113,29 @@ export class ProjectListItem implements Pick<IProject, 'id' | 'name'> {
   }
 }
 
-export interface IProjectResponse extends Omit<IProject, keyof IDatabaseColumn> {
+export interface IProjectDataResponse extends Omit<IProject, keyof IDatabaseColumn> {
   userId?: number;
-  columns?: IProjectColumnResponse[];
-  tasks?: ITaskResponse[];
+  members?: ISimplifiedUser[];
 }
 
-export class ProjectResponse implements IProjectResponse {
+export class ProjectDataResponse implements IProjectDataResponse {
   id: number;
   name: string;
   description?: string;
+  prefix: string;
   ownerId: number;
   isOwner: boolean;
   columns: IProjectColumnResponse[];
   tasks: ITaskResponse[];
+  members?: ISimplifiedUser[];
 
-  constructor(data: IProjectResponse) {
+  constructor(data: IProjectDataResponse) {
     this.id = data.id;
     this.name = data.name;
     this.description = data.description;
+    this.prefix = data.prefix;
     this.isOwner = data?.ownerId === data?.userId || false;
-    this.columns = data.columns || [];
-    this.tasks = data.tasks || [];
+    this.members = data.members || [];
   }
 }
 
@@ -196,6 +212,7 @@ export interface ITask extends IDatabaseColumn {
   projectId: number;
   projectColumnId: number;
   order: number;
+  identifier: string;
 }
 
 export class Task implements ITask {
@@ -207,6 +224,7 @@ export class Task implements ITask {
   projectId: number;
   projectColumnId: number;
   order: number;
+  identifier: string;
 
   constructor(data: ITask) {
     this.id = data.id || null;
@@ -217,6 +235,7 @@ export class Task implements ITask {
     this.projectId = data.projectId || null;
     this.projectColumnId = data.projectColumnId || null;
     this.order = data.order || null;
+    this.identifier = data.identifier || null;
   }
 }
 
@@ -233,6 +252,7 @@ export class TaskResponse implements ITaskResponse {
   assignee: ISimplifiedUser;
   projectColumnId: number;
   order: number;
+  identifier: string;
 
   constructor(data: ITaskResponse) {
     this.id = data.id || null;
@@ -243,12 +263,15 @@ export class TaskResponse implements ITaskResponse {
     this.createdBy = {
       id: data.createdBy.id || null,
       fullName: `${data.createdBy.name} ${data.createdBy.surname}`,
+      avatarUrl: data.createdBy.avatarUrl || null,
     };
     this.assignee = {
       id: data.assignee.id || null,
       fullName: `${data.assignee.name} ${data.assignee.surname}`,
+      avatarUrl: data.assignee.avatarUrl || null,
     };
     this.projectColumnId = data.projectColumnId || null;
+    this.identifier = data.identifier || null;
   }
 }
 
@@ -276,4 +299,8 @@ export interface IAuthenticatedRequest extends Request {
 
 export interface IAuthenticatedRequestWithBody<T> extends IAuthenticatedRequest {
   body: T;
+}
+
+export interface IAuthenticatedRequestWithQuery<T extends ParsedQs = ParsedQs> extends IAuthenticatedRequest {
+  query: T;
 }

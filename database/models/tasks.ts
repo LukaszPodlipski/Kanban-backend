@@ -57,6 +57,10 @@ const TasksModel = sequelize.define<TaskModel>('tasks', {
     type: DataTypes.INTEGER,
     allowNull: false,
   },
+  identifier: {
+    type: DataTypes.STRING,
+    allowNull: false,
+  },
 });
 
 UserModel.hasMany(TasksModel, { foreignKey: 'createdById', as: 'tasksCreatedBy' });
