@@ -1,5 +1,6 @@
 import { Request } from 'express';
 import { Model } from 'sequelize';
+import { ParsedQs } from 'qs';
 
 /* ------------------------------ DATA BASE ---------------------------- */
 interface IDatabaseColumn {
@@ -298,4 +299,8 @@ export interface IAuthenticatedRequest extends Request {
 
 export interface IAuthenticatedRequestWithBody<T> extends IAuthenticatedRequest {
   body: T;
+}
+
+export interface IAuthenticatedRequestWithQuery<T extends ParsedQs = ParsedQs> extends IAuthenticatedRequest {
+  query: T;
 }

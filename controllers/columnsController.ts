@@ -1,24 +1,19 @@
 import { Response } from 'express';
 import { StatusCodes } from 'http-status-codes';
-import { IAuthenticatedRequestWithBody, ISpecificProjectParams } from '../database/types';
+import { IAuthenticatedRequestWithBody, IAuthenticatedRequestWithQuery, ISpecificProjectParams } from '../database/types';
 import { errorHandler, authenticateProjectUser } from './utils';
-import { specificProjectParamsSchema, getProjectResourceBodySchema, createColumnBodySchema } from './validationSchemas';
+import { specificProjectParamsSchema, getProjectResourceParamsSchema, createColumnBodySchema } from './validationSchemas';
 
 import ProjectsModel from '../database/models/projects';
 import ProjectColumnsModel from '../database/models/projectColumns';
 
 /* -------------------------------- GET PROJECT COLUMNS --------------------------------- */
-export async function getProjectColumns(
-  req: IAuthenticatedRequestWithBody<{
-    projectId: number;
-  }>,
-  res: Response
-) {
+export async function getProjectColumns(req: IAuthenticatedRequestWithQuery<{ id: string }>, res: Response) {
   try {
-    await getProjectResourceBodySchema.validate(req.body);
+    await getProjectResourceParamsSchema.validate(req.query);
     await authenticateProjectUser(req);
 
-    const { projectId } = req.body || {};
+    const { id: projectId } = req.query || {};
 
     const project = await ProjectsModel.findByPk(projectId);
 

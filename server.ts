@@ -14,6 +14,7 @@ import authRouter from './routes/authRouter';
 import projectsRouter from './routes/projectsRouter';
 import tasksRouter from './routes/tasksRouter';
 import columnsRouter from './routes/columnsRouter';
+import membersRouter from './routes/membersRouter';
 
 export type TServerConfig = {
   port: number;
@@ -48,6 +49,7 @@ const startServer = async ({ port, corsOptions, limiter }: TServerConfig, { drop
   app.use('/api/projects', projectsRouter);
   app.use('/api/tasks', tasksRouter);
   app.use('/api/columns', columnsRouter);
+  app.use('/api/members', membersRouter);
 
   // Start the server
   await new Promise<void>((resolve, reject) => {

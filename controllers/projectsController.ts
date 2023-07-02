@@ -6,7 +6,6 @@ import {
   IProjectDataResponse,
   ProjectDataResponse,
   ProjectListItem,
-  SimplifiedUser,
 } from '../database/types';
 
 import { errorHandler, authenticateProjectUser } from './utils';
@@ -14,7 +13,6 @@ import { specificProjectParamsSchema } from './validationSchemas';
 
 import ProjectsModel from '../database/models/projects';
 import ProjectUsersModel from '../database/models/projectUsers';
-import UsersModel from '../database/models/users';
 
 /* -------------------------------- GET LIST OF USER'S PROJECTS --------------------------------- */
 export const getUserProjectsList = async (req: IAuthenticatedRequest, res: Response) => {
@@ -49,14 +47,11 @@ export const getProjectData = async (req: IAuthenticatedRequest & { params: ISpe
     const { id: projectId } = req.params;
     const { id: userId } = req.user;
 
-    const project = await ProjectsModel.findByPk(projectId, {
-      include: [UsersModel],
-    });
+    const project = await ProjectsModel.findByPk(projectId);
 
     const projectData: IProjectDataResponse = new ProjectDataResponse({
       ...project.toJSON(),
       userId,
-      members: project.users.map((user) => new SimplifiedUser(user)),
     });
 
     res.json(projectData);

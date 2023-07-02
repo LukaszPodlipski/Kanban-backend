@@ -25,6 +25,6 @@ export const moveTaskBodySchema = yup.object().shape({
   targetIndex: yup.string().required('To index is required'),
 });
 
-export const getProjectResourceBodySchema = yup.object().shape({
-  projectId: yup.string().required('ProjectId is required'),
+export const getProjectResourceParamsSchema = yup.object().shape({
+  id: yup.string().required('Id of project is required'),
 });
