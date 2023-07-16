@@ -4,7 +4,7 @@ import { IProjectUser } from 'database/types';
 
 interface ProjectUserModel extends Model<IProjectUser>, IProjectUser {}
 
-const ProjectUsersModel = sequelize.define<ProjectUserModel>('projectUsers', {
+const ProjectUsersModel = sequelize.define<ProjectUserModel>('project_users', {
   id: {
     type: DataTypes.INTEGER,
     autoIncrement: true,

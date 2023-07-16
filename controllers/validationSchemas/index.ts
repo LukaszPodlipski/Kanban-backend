@@ -16,8 +16,8 @@ export const createColumnBodySchema = yup.object().shape({
 export const createTaskBodySchema = yup.object().shape({
   description: yup.string().required('Description is required'),
   name: yup.string().required('Name is required'),
-  assigneeId: yup.number().moreThan(0),
-  projectColumnId: yup.number().moreThan(0),
+  assigneeId: yup.number().moreThan(0).nullable(),
+  projectColumnId: yup.number().moreThan(0).nullable(),
 });
 
 export const moveTaskBodySchema = yup.object().shape({

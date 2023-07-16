@@ -6,7 +6,7 @@ import TasksModel from './tasks';
 
 interface ProjectColumnModel extends Model<IProjectColumn>, IProjectColumn {}
 
-const ProjectColumnsModel = sequelize.define<ProjectColumnModel>('projectColumns', {
+const ProjectColumnsModel = sequelize.define<ProjectColumnModel>('project_columns', {
   id: {
     type: DataTypes.INTEGER,
     autoIncrement: true,

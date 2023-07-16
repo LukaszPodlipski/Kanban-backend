@@ -256,21 +256,22 @@ export class TaskResponse implements ITaskResponse {
 
   constructor(data: ITaskResponse) {
     this.id = data.id || null;
-    this.name = data.name || null;
-    this.description = data.description || null;
+    this.name = data.name || '';
+    this.description = data.description || '';
     this.projectColumnId = data.projectColumnId || null;
     this.order = data.order || 0;
     this.createdBy = {
-      id: data.createdBy.id || null,
+      id: data.createdBy?.id || null,
       fullName: `${data.createdBy.name} ${data.createdBy.surname}`,
       avatarUrl: data.createdBy.avatarUrl || null,
     };
-    this.assignee = {
-      id: data.assignee.id || null,
-      fullName: `${data.assignee.name} ${data.assignee.surname}`,
-      avatarUrl: data.assignee.avatarUrl || null,
-    };
-    this.projectColumnId = data.projectColumnId || null;
+    this.assignee = data.assignee?.id
+      ? {
+          id: data.assignee.id || null,
+          fullName: `${data.assignee.name} ${data.assignee.surname}`,
+          avatarUrl: data.assignee.avatarUrl || null,
+        }
+      : null;
     this.identifier = data.identifier || null;
   }
 }

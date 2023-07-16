@@ -31,7 +31,6 @@ const TasksModel = sequelize.define<TaskModel>('tasks', {
   },
   assigneeId: {
     type: DataTypes.INTEGER,
-    allowNull: false,
     references: {
       model: 'users',
       key: 'id',
@@ -47,9 +46,8 @@ const TasksModel = sequelize.define<TaskModel>('tasks', {
   },
   projectColumnId: {
     type: DataTypes.INTEGER,
-    allowNull: false,
     references: {
-      model: 'projectColumns',
+      model: 'project_columns',
       key: 'id',
     },
   },
