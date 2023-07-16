@@ -21,6 +21,19 @@ import TasksModel from '../database/models/tasks';
 
 import { sendWebSocketMessage } from '../websocket';
 
+const getTaskResponse = async (task) => {
+  const createdBy = await Users.findOne({ where: { id: task?.createdById } }).then((user) => user.toJSON());
+  const assignee = task?.assigneeId ? await Users.findOne({ where: { id: task?.assigneeId } }) : null;
+
+  const completeTask = {
+    ...task,
+    assignee,
+    createdBy,
+  };
+
+  return new TaskResponse(completeTask);
+};
+
 /* -------------------------------- GET PROJECT TASKS --------------------------------- */
 export async function getProjectTasks(req: IAuthenticatedRequestWithQuery<{ id: string }>, res: Response) {
   try {
@@ -51,8 +64,8 @@ export async function getProjectTasks(req: IAuthenticatedRequestWithQuery<{ id: 
 
 export async function createTask(
   req: IAuthenticatedRequestWithBody<{
-    description: string;
     name: string;
+    description: string;
     createdById: number;
     assigneeId: number;
     projectColumnId: number;
@@ -68,20 +81,43 @@ export async function createTask(
 
     const { name, description, assigneeId, projectColumnId } = req.body;
 
-    const tasks = await TasksModel.findAll({ where: { projectColumnId } });
+    const columnTasks = await TasksModel.findAll({ where: { projectColumnId } });
+    const lastTask = await TasksModel.findOne({
+      order: [['createdAt', 'DESC']], // Sort by createdAt column in descending order
+    });
 
-    const order = tasks.length + 1;
+    const lastIdentifier = lastTask.identifier.split('-');
+
+    const order = columnTasks.length + 1;
     const createdById = req.user.id;
 
-    const task = await TasksModel.create({
+    const data = {
       name,
       description,
       createdById,
-      assigneeId,
-      projectId,
-      projectColumnId,
+      assigneeId: assigneeId || null,
+      projectId: Number(projectId),
+      projectColumnId: projectColumnId || null,
       order,
-    });
+      identifier: `${lastIdentifier[0]}-${Number(lastIdentifier[1]) + 1}`,
+    };
+
+    const task = await TasksModel.create(data);
+
+    const taskResponse = await getTaskResponse(task.toJSON());
+
+    const permittedUsers = await ProjectUsers.findAll({ where: { projectId } }).then((users) => users.map((user) => user.userId));
+
+    const payload = {
+      data: taskResponse,
+      itemType: 'task',
+      messageType: 'create',
+      channel: 'TasksIndexChannel',
+      channelParams: { projectId: task.projectId },
+      receiversIds: permittedUsers,
+    };
+
+    sendWebSocketMessage(payload);
 
     return res.status(StatusCodes.OK).json(task);
   } catch (err) {
@@ -98,19 +134,6 @@ export async function moveTask(
   res: Response
 ) {
   try {
-    const getTaskResponse = async (task) => {
-      const createdBy = await Users.findOne({ where: { id: task?.createdById } });
-      const assignee = await Users.findOne({ where: { id: task?.assigneeId } });
-
-      const completeTask = {
-        ...task,
-        assignee,
-        createdBy,
-      };
-
-      return new TaskResponse(completeTask);
-    };
-
     await specificProjectParamsSchema.validate(req.params);
     await moveTaskBodySchema.validate(req.body);
 
