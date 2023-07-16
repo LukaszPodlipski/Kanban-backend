@@ -52,7 +52,6 @@ export async function getProjectTasks(
 
     const { id: projectId, filters } = req.query;
     const { assigneeIds, query } = filters || {};
-    console.log('query: ', query);
 
     let condition: WhereOptions = {
       projectId,
