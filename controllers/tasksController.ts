@@ -18,8 +18,15 @@ import {
 import ProjectUsers from '../database/models/projectUsers';
 import Users from '../database/models/users';
 import TasksModel from '../database/models/tasks';
+import { Op, WhereOptions, Sequelize } from 'sequelize';
 
 import { sendWebSocketMessage } from '../websocket';
+
+interface iTasksFilters {
+  assigneeIds?: string[];
+  query?: string;
+  [key: string]: string | string[] | undefined;
+}
 
 const getTaskResponse = async (task) => {
   const createdBy = await Users.findOne({ where: { id: task?.createdById } }).then((user) => user.toJSON());
@@ -35,15 +42,46 @@ const getTaskResponse = async (task) => {
 };
 
 /* -------------------------------- GET PROJECT TASKS --------------------------------- */
-export async function getProjectTasks(req: IAuthenticatedRequestWithQuery<{ id: string }>, res: Response) {
+export async function getProjectTasks(
+  req: IAuthenticatedRequestWithQuery<{ id: string; filters: iTasksFilters }>,
+  res: Response
+) {
   try {
     await getProjectResourceParamsSchema.validate(req.query);
     await authenticateProjectUser(req);
 
-    const { id: projectId } = req.query;
+    const { id: projectId, filters } = req.query;
+    const { assigneeIds, query } = filters || {};
+    console.log('query: ', query);
 
-    const tasks = await TasksModel.findAll({ where: { projectId } });
+    let condition: WhereOptions = {
+      projectId,
+    };
 
+    if (assigneeIds?.length) {
+      condition = {
+        ...condition,
+        assigneeId: {
+          [Op.in]: assigneeIds,
+        },
+      };
+    }
+
+    if (query) {
+      condition = {
+        ...condition,
+        [Op.or]: [
+          Sequelize.where(Sequelize.fn('LOWER', Sequelize.col('description')), {
+            [Op.iLike]: `%${query.toLowerCase()}%`,
+          }),
+          Sequelize.where(Sequelize.fn('LOWER', Sequelize.col('name')), {
+            [Op.iLike]: `%${query.toLowerCase()}%`,
+          }),
+        ],
+      };
+    }
+
+    const tasks = await TasksModel.findAll({ where: condition });
     const parsedTasks = await Promise.all(
       tasks.map(async (task) => {
         const createdBy = await Users.findOne({ where: { id: task?.createdById } });
