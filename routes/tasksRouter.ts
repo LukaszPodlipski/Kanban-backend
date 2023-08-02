@@ -3,10 +3,12 @@ import { authenticateToken } from '../controllers/authMiddleware';
 
 const router = express.Router();
 
-import { getProjectTasks, createTask, moveTask } from '../controllers/tasksController';
+import { getProjectTasks, getProjectTask, createTask, updateTask, moveTask } from '../controllers/tasksController';
 
 router.get('/', authenticateToken, getProjectTasks);
-router.post('/:id', authenticateToken, createTask);
+router.get('/:id', authenticateToken, getProjectTask);
+router.post('/', authenticateToken, createTask);
+router.patch('/:id', authenticateToken, updateTask);
 router.patch('/move/:id', authenticateToken, moveTask);
 
 export default router;

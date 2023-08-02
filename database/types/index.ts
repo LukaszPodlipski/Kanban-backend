@@ -103,7 +103,7 @@ export class Project implements IProject {
   }
 }
 
-export class ProjectListItem implements Pick<IProject, 'id' | 'name'> {
+export class SimplifiedProject implements Pick<IProject, 'id' | 'name'> {
   id: number;
   name: string;
 
@@ -125,9 +125,6 @@ export class ProjectDataResponse implements IProjectDataResponse {
   prefix: string;
   ownerId: number;
   isOwner: boolean;
-  columns: IProjectColumnResponse[];
-  tasks: ITaskResponse[];
-  members?: ISimplifiedUser[];
 
   constructor(data: IProjectDataResponse) {
     this.id = data.id;
@@ -135,7 +132,6 @@ export class ProjectDataResponse implements IProjectDataResponse {
     this.description = data.description;
     this.prefix = data.prefix;
     this.isOwner = data?.ownerId === data?.userId || false;
-    this.members = data.members || [];
   }
 }
 
@@ -165,7 +161,6 @@ export interface IProjectColumn extends IDatabaseColumn {
   projectId: number;
   order: number;
   color: string;
-  tasks?: ITask[];
 }
 
 export class ProjectColumn implements IProjectColumn {
@@ -213,6 +208,8 @@ export interface ITask extends IDatabaseColumn {
   projectColumnId: number;
   order: number;
   identifier: string;
+  relationMode: string;
+  relationId: number;
 }
 
 export class Task implements ITask {
@@ -225,6 +222,8 @@ export class Task implements ITask {
   projectColumnId: number;
   order: number;
   identifier: string;
+  relationMode: string;
+  relationId: number;
 
   constructor(data: ITask) {
     this.id = data.id || null;
@@ -236,6 +235,8 @@ export class Task implements ITask {
     this.projectColumnId = data.projectColumnId || null;
     this.order = data.order || null;
     this.identifier = data.identifier || null;
+    this.relationMode = data.relationMode || null;
+    this.relationId = data.relationId || null;
   }
 }
 
@@ -253,6 +254,8 @@ export class TaskResponse implements ITaskResponse {
   projectColumnId: number;
   order: number;
   identifier: string;
+  relationMode: string;
+  relationId: number;
 
   constructor(data: ITaskResponse) {
     this.id = data.id || null;
@@ -273,13 +276,50 @@ export class TaskResponse implements ITaskResponse {
         }
       : null;
     this.identifier = data.identifier || null;
+    this.relationMode = data.relationMode || null;
+    this.relationId = data.relationId || null;
   }
+}
+
+export class SimplifiedTaskResponse
+  implements
+    Pick<ITaskResponse, 'id' | 'name' | 'identifier' | 'description' | 'assignee' | 'projectColumnId' | 'order' | 'identifier'>
+{
+  id: number;
+  name: string;
+  identifier: string;
+  description: string;
+  assignee: ISimplifiedUser;
+  projectColumnId: number;
+  order: number;
+
+  constructor(data: ITaskResponse) {
+    this.id = data.id || null;
+    this.name = data.name || '';
+    this.identifier = data.identifier || null;
+    this.description = data.description || '';
+    this.projectColumnId = data.projectColumnId || null;
+    this.order = data.order || 0;
+    this.assignee = data.assignee?.id
+      ? {
+          id: data.assignee.id || null,
+          fullName: `${data.assignee.name} ${data.assignee.surname}`,
+          avatarUrl: data.assignee.avatarUrl || null,
+        }
+      : null;
+  }
+}
+
+export interface iTasksFilters {
+  assigneeIds?: string[];
+  query?: string;
+  [key: string]: string | string[] | undefined;
 }
 
 /* -------------------------------- REQUEST & PAYLOADS ------------------------------- */
 
 /* --- URL PARAMS ---*/
-export interface ISpecificProjectParams {
+export interface ISpecificItemParams {
   id: number;
 }
 

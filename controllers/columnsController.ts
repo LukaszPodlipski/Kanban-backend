@@ -1,19 +1,19 @@
 import { Response } from 'express';
 import { StatusCodes } from 'http-status-codes';
-import { IAuthenticatedRequestWithBody, IAuthenticatedRequestWithQuery, ISpecificProjectParams } from '../database/types';
+import { IAuthenticatedRequestWithQuery } from '../database/types';
 import { errorHandler, authenticateProjectUser } from './utils';
-import { specificProjectParamsSchema, getProjectResourceParamsSchema, createColumnBodySchema } from './validationSchemas';
+import { specificItemParamsSchema, getProjectResourceParamsSchema, createColumnBodySchema } from './validationSchemas';
 
 import ProjectsModel from '../database/models/projects';
 import ProjectColumnsModel from '../database/models/projectColumns';
 
 /* -------------------------------- GET PROJECT COLUMNS --------------------------------- */
-export async function getProjectColumns(req: IAuthenticatedRequestWithQuery<{ id: string }>, res: Response) {
+export async function getProjectColumns(req: IAuthenticatedRequestWithQuery<{ projectId: string }>, res: Response) {
   try {
     await getProjectResourceParamsSchema.validate(req.query);
     await authenticateProjectUser(req);
 
-    const { id: projectId } = req.query || {};
+    const { projectId } = req.query || {};
 
     const project = await ProjectsModel.findByPk(projectId);
 
@@ -31,16 +31,13 @@ export async function getProjectColumns(req: IAuthenticatedRequestWithQuery<{ id
 }
 
 /* -------------------------------- CREATE COLUMN --------------------------------- */
-export async function createColumn(
-  req: IAuthenticatedRequestWithBody<{ name: string }> & { params: ISpecificProjectParams },
-  res: Response
-) {
+export async function createColumn(req: IAuthenticatedRequestWithQuery<{ projectId: string }>, res: Response) {
   try {
-    await specificProjectParamsSchema.validate(req.params);
+    await specificItemParamsSchema.validate(req.query);
     await createColumnBodySchema.validate(req.body);
     await authenticateProjectUser(req);
 
-    const { id: projectId } = req.params;
+    const { projectId } = req.query || {};
 
     const { name } = req.body;
 
@@ -50,7 +47,7 @@ export async function createColumn(
 
     const column = await ProjectColumnsModel.create({
       name,
-      projectId,
+      projectId: Number(projectId),
       order,
     });
 

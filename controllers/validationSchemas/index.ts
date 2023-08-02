@@ -5,8 +5,8 @@ export const loginSchema = yup.object().shape({
   password: yup.string().required('Password is required'),
 });
 
-export const specificProjectParamsSchema = yup.object().shape({
-  id: yup.number().required('Id is required').moreThan(0),
+export const specificItemParamsSchema = yup.object().shape({
+  id: yup.number().required('Item id is required').moreThan(0),
 });
 
 export const createColumnBodySchema = yup.object().shape({
@@ -14,6 +14,7 @@ export const createColumnBodySchema = yup.object().shape({
 });
 
 export const createTaskBodySchema = yup.object().shape({
+  projectId: yup.number().required('Project id is required').moreThan(0),
   description: yup.string().required('Description is required'),
   name: yup.string().required('Name is required'),
   assigneeId: yup.number().moreThan(0).nullable(),
@@ -26,5 +27,5 @@ export const moveTaskBodySchema = yup.object().shape({
 });
 
 export const getProjectResourceParamsSchema = yup.object().shape({
-  id: yup.string().required('Id of project is required'),
+  projectId: yup.string().required('Project id is required'),
 });

@@ -18,7 +18,7 @@ const TasksModel = sequelize.define<TaskModel>('tasks', {
     allowNull: false,
   },
   description: {
-    type: DataTypes.STRING,
+    type: DataTypes.TEXT,
     allowNull: true,
   },
   createdById: {
@@ -58,6 +58,14 @@ const TasksModel = sequelize.define<TaskModel>('tasks', {
   identifier: {
     type: DataTypes.STRING,
     allowNull: false,
+  },
+  relationMode: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  relationId: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
   },
 });
 

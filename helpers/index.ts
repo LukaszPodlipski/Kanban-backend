@@ -1,6 +1,8 @@
+import isObject from 'lodash/isObject';
+
 export const compareObjects = (objectA, objectB) => {
-  const keysA = Object.keys(objectA) || [];
-  const keysB = Object.keys(objectB) || [];
+  const keysA = isObject(objectA) ? Object.keys(objectA) : [];
+  const keysB = isObject(objectB) ? Object.keys(objectB) : [];
 
   if (keysA.length !== keysB.length) {
     return false;

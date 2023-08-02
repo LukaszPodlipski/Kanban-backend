@@ -3,13 +3,15 @@ import { StatusCodes } from 'http-status-codes';
 import {
   IAuthenticatedRequestWithBody,
   IAuthenticatedRequestWithQuery,
-  ISpecificProjectParams,
+  ISpecificItemParams,
   TaskResponse,
+  SimplifiedTaskResponse,
+  iTasksFilters,
 } from '../database/types';
 import { errorHandler, authenticateProjectUser } from './utils';
 
 import {
-  specificProjectParamsSchema,
+  specificItemParamsSchema,
   getProjectResourceParamsSchema,
   createTaskBodySchema,
   moveTaskBodySchema,
@@ -22,13 +24,7 @@ import { Op, WhereOptions, Sequelize } from 'sequelize';
 
 import { sendWebSocketMessage } from '../websocket';
 
-interface iTasksFilters {
-  assigneeIds?: string[];
-  query?: string;
-  [key: string]: string | string[] | undefined;
-}
-
-const getTaskResponse = async (task) => {
+const getTaskResponse = async (task, simplified: boolean = false) => {
   const createdBy = await Users.findOne({ where: { id: task?.createdById } }).then((user) => user.toJSON());
   const assignee = task?.assigneeId ? await Users.findOne({ where: { id: task?.assigneeId } }) : null;
 
@@ -38,19 +34,19 @@ const getTaskResponse = async (task) => {
     createdBy,
   };
 
-  return new TaskResponse(completeTask);
+  return simplified ? new SimplifiedTaskResponse(completeTask) : new TaskResponse(completeTask);
 };
 
 /* -------------------------------- GET PROJECT TASKS --------------------------------- */
 export async function getProjectTasks(
-  req: IAuthenticatedRequestWithQuery<{ id: string; filters: iTasksFilters }>,
+  req: IAuthenticatedRequestWithQuery<{ projectId: string; filters: iTasksFilters }>,
   res: Response
 ) {
   try {
     await getProjectResourceParamsSchema.validate(req.query);
     await authenticateProjectUser(req);
 
-    const { id: projectId, filters } = req.query;
+    const { projectId, filters } = req.query;
     const { assigneeIds, query } = filters || {};
 
     let condition: WhereOptions = {
@@ -81,16 +77,34 @@ export async function getProjectTasks(
     }
 
     const tasks = await TasksModel.findAll({ where: condition });
-    const parsedTasks = await Promise.all(
-      tasks.map(async (task) => {
-        const createdBy = await Users.findOne({ where: { id: task?.createdById } });
-        const assignee = await Users.findOne({ where: { id: task?.assigneeId } });
+    const parsedTasks = await Promise.all(tasks.map((task) => getTaskResponse(task.toJSON(), true)));
 
-        return new TaskResponse({ ...task.toJSON(), createdBy, assignee });
-      })
-    );
+    return res.json(parsedTasks);
+  } catch (err) {
+    console.log('err: ', err);
+    errorHandler(err, res);
+  }
+}
 
-    res.json(parsedTasks);
+/* -------------------------------- GET PROJECT TASK --------------------------------- */
+
+export async function getProjectTask(req: IAuthenticatedRequestWithQuery<{ projectId: string }>, res: Response) {
+  try {
+    await getProjectResourceParamsSchema.validate(req.query);
+    await authenticateProjectUser(req);
+
+    const { id: taskId } = req.params;
+
+    const task = await TasksModel.findByPk(taskId);
+
+    if (!task) return res.status(StatusCodes.NOT_FOUND).json({ error: 'Task not found' });
+
+    if (task.projectId !== Number(req.query.projectId))
+      return res.status(StatusCodes.FORBIDDEN).json({ error: 'You are not permitted to access this task' });
+
+    const taskResponse = await getTaskResponse(task.toJSON());
+
+    return res.json(taskResponse);
   } catch (err) {
     console.log('err: ', err);
     errorHandler(err, res);
@@ -101,22 +115,21 @@ export async function getProjectTasks(
 
 export async function createTask(
   req: IAuthenticatedRequestWithBody<{
+    projectId: number;
     name: string;
     description: string;
-    createdById: number;
-    assigneeId: number;
-    projectColumnId: number;
-  }> & { params: ISpecificProjectParams },
+    assigneeId?: number;
+    projectColumnId?: number;
+    relationMode?: string;
+    relationId?: number;
+  }>,
   res: Response
 ) {
   try {
-    await specificProjectParamsSchema.validate(req.params);
     await createTaskBodySchema.validate(req.body);
     await authenticateProjectUser(req);
 
-    const { id: projectId } = req.params;
-
-    const { name, description, assigneeId, projectColumnId } = req.body;
+    const { name, description, assigneeId, projectColumnId, projectId, relationMode, relationId } = req.body;
 
     const columnTasks = await TasksModel.findAll({ where: { projectColumnId } });
     const lastTask = await TasksModel.findOne({
@@ -133,15 +146,17 @@ export async function createTask(
       description,
       createdById,
       assigneeId: assigneeId || null,
-      projectId: Number(projectId),
+      projectId: projectId,
       projectColumnId: projectColumnId || null,
       order,
       identifier: `${lastIdentifier[0]}-${Number(lastIdentifier[1]) + 1}`,
+      relationMode: relationMode || null,
+      relationId: relationId || null,
     };
 
     const task = await TasksModel.create(data);
 
-    const taskResponse = await getTaskResponse(task.toJSON());
+    const taskResponse = await getTaskResponse(task.toJSON(), true);
 
     const permittedUsers = await ProjectUsers.findAll({ where: { projectId } }).then((users) => users.map((user) => user.userId));
 
@@ -162,16 +177,81 @@ export async function createTask(
   }
 }
 
+/* -------------------------------- UPDATE TASK --------------------------------- */
+
+export async function updateTask(
+  req: IAuthenticatedRequestWithBody<{
+    name?: string;
+    description?: string;
+    assigneeId?: number;
+    projectColumnId?: number;
+    relationMode?: string;
+    relationId?: number;
+  }> & { params: ISpecificItemParams },
+  res: Response
+) {
+  try {
+    await specificItemParamsSchema.validate(req.params);
+    await authenticateProjectUser(req);
+
+    const { name, description, assigneeId, projectColumnId, relationMode, relationId } = req.body;
+    const { id: taskId } = req.params;
+
+    const task = await TasksModel.findByPk(taskId).then((task) => task?.toJSON());
+
+    if (!task) {
+      return res.status(StatusCodes.NOT_FOUND).json({ error: 'Task not found' });
+    }
+
+    const permittedUsers = await ProjectUsers.findAll({ where: { projectId: task.projectId } }).then((users) =>
+      users.map((user) => user.userId)
+    );
+
+    const data = {
+      name: name || task.name,
+      description: description || task.description,
+      assigneeId: assigneeId || task.assigneeId,
+      projectColumnId: projectColumnId || task.projectColumnId,
+      relationMode: relationMode || task.relationMode,
+      relationId: relationId || task.relationId,
+    };
+
+    await TasksModel.update(data, { where: { id: taskId } });
+
+    const updatedTask = await TasksModel.findByPk(taskId).then((task) => task?.toJSON());
+
+    const taskResponse = await getTaskResponse(updatedTask);
+
+    const payload = {
+      data: taskResponse,
+      itemType: 'task',
+      messageType: 'update',
+      receiversIds: permittedUsers,
+    };
+
+    sendWebSocketMessage({ ...payload, channel: 'TasksIndexChannel', channelParams: { projectId: task.projectId } });
+    sendWebSocketMessage({
+      ...payload,
+      channel: 'TaskIndexChannel',
+      channelParams: { projectId: task.projectId, taskId: task.id },
+    });
+
+    return res.status(StatusCodes.OK).json(updatedTask);
+  } catch (err) {
+    errorHandler(err, res);
+  }
+}
+
 /* -------------------------------- MOVE TASK --------------------------------- */
 export async function moveTask(
   req: IAuthenticatedRequestWithBody<{
     targetColumnId: number;
     targetIndex: number;
-  }> & { params: ISpecificProjectParams },
+  }> & { params: ISpecificItemParams },
   res: Response
 ) {
   try {
-    await specificProjectParamsSchema.validate(req.params);
+    await specificItemParamsSchema.validate(req.params);
     await moveTaskBodySchema.validate(req.body);
 
     const { targetColumnId, targetIndex } = req.body;
@@ -289,7 +369,7 @@ export async function moveTask(
 
     // 12. send websocket message with all updated tasks
     [...updatedTasksInTargetColumn, ...updatedTasksInSourceColumn].forEach(async (task) => {
-      const taskResponse = await getTaskResponse(task);
+      const taskResponse = await getTaskResponse(task, true);
       const payload = {
         data: taskResponse,
         itemType: 'task',
