@@ -23,6 +23,7 @@ import TasksModel from '../database/models/tasks';
 import { Op, WhereOptions, Sequelize } from 'sequelize';
 
 import { sendWebSocketMessage } from '../websocket';
+import { oppositeRelationTypesMap } from './const/relationTypes';
 
 const getTaskResponse = async (task, simplified: boolean = false) => {
   const createdBy = await Users.findOne({ where: { id: task?.createdById } }).then((user) => user.toJSON());
@@ -209,14 +210,23 @@ export async function updateTask(
 
     const data = {
       name: name || task.name,
-      description: description || task.description,
-      assigneeId: assigneeId || task.assigneeId,
-      projectColumnId: projectColumnId || task.projectColumnId,
-      relationMode: relationMode || task.relationMode,
-      relationId: relationId || task.relationId,
+      description: typeof description !== 'undefined' ? description : task.description,
+      assigneeId: typeof assigneeId !== 'undefined' ? assigneeId : task.assigneeId,
+      projectColumnId: typeof projectColumnId !== 'undefined' ? projectColumnId : task.projectColumnId,
+      relationMode: typeof relationMode !== 'undefined' ? relationMode : task.relationMode,
+      relationId: typeof relationId !== 'undefined' ? relationId : task.relationId,
     };
 
     await TasksModel.update(data, { where: { id: taskId } });
+
+    if (typeof relationId !== 'undefined' && typeof relationMode !== 'undefined') {
+      const relationData = {
+        relationMode: oppositeRelationTypesMap[relationMode] || null,
+        relationId: relationId ? taskId : null,
+      };
+      const relationTask = await TasksModel.findByPk(relationId).then((task) => task?.toJSON());
+      await TasksModel.update(relationData, { where: { id: relationTask?.id || task.relationId } });
+    }
 
     const updatedTask = await TasksModel.findByPk(taskId).then((task) => task?.toJSON());
 
