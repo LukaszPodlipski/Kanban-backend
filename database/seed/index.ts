@@ -9,8 +9,10 @@ import ProjectsModel from '../models/projects';
 import ProjectUsersModel from '../models/projectUsers';
 import ProjectColumnsModel from '../models/projectColumns';
 import TasksModel from '../models/tasks';
+import TaskComments from '../models/taskComments';
+import TaskLogs from '../models/taskLogs';
 
-import { User, Project, ProjectUser, ProjectColumn, Task } from '../types/index';
+import { User, Project, ProjectUser, ProjectColumn, Task, TaskComment, TaskLog } from '../types/index';
 
 function camelToSnakeCase(str) {
   const firstChar = str.charAt(0).toLowerCase();
@@ -48,6 +50,18 @@ const seeds = [
     model: TasksModel,
     data: './database/seed/data/tasks.csv',
     dataModel: (row) => new Task(row),
+  },
+  {
+    name: 'TaskComments',
+    model: TaskComments,
+    data: './database/seed/data/taskComments.csv',
+    dataModel: (row) => new TaskComment(row),
+  },
+  {
+    name: 'TaskLogs',
+    model: TaskLogs,
+    data: './database/seed/data/taskLogs.csv',
+    dataModel: (row) => new TaskLog(row),
   },
 ];
 

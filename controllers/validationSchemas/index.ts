@@ -29,3 +29,7 @@ export const moveTaskBodySchema = yup.object().shape({
 export const getProjectResourceParamsSchema = yup.object().shape({
   projectId: yup.string().required('Project id is required'),
 });
+
+export const addTaskCommentBodySchema = yup.object().shape({
+  content: yup.string().required('Content is required'),
+});

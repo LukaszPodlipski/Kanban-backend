@@ -4,6 +4,8 @@ import { ITask } from 'database/types';
 
 import UserModel from './users';
 import ProjectsModel from './projects';
+import TaskCommentsModel from './taskComments';
+import TaskLogsModel from './taskLogs';
 
 interface TaskModel extends Model<ITask>, ITask {}
 
@@ -77,4 +79,10 @@ TasksModel.belongsTo(UserModel, { foreignKey: 'assigneeId', as: 'assignee' });
 
 ProjectsModel.hasMany(TasksModel, { foreignKey: 'projectId' });
 TasksModel.belongsTo(ProjectsModel, { foreignKey: 'projectId' });
+
+TasksModel.hasMany(TaskCommentsModel, { foreignKey: 'taskId' });
+TaskCommentsModel.belongsTo(TasksModel, { foreignKey: 'taskId' });
+
+TasksModel.hasMany(TaskLogsModel, { foreignKey: 'taskId' });
+TaskLogsModel.belongsTo(TasksModel, { foreignKey: 'taskId' });
 export default TasksModel;

@@ -212,6 +212,51 @@ export interface ITask extends IDatabaseColumn {
   relationId: number;
 }
 
+export interface ITaskLog extends IDatabaseColumn {
+  id: number;
+  taskId: number;
+  userId: number;
+  text: string;
+}
+
+export class TaskLog implements ITaskLog {
+  id: number;
+  taskId: number;
+  userId: number;
+  date: Date;
+  text: string;
+  createdAt: Date;
+
+  constructor(data: ITaskLog) {
+    this.id = data.id || null;
+    this.taskId = data.taskId || null;
+    this.userId = data.userId || null;
+    this.text = data.text || null;
+    this.createdAt = data.createdAt || null;
+  }
+}
+
+export interface ITaskComment extends IDatabaseColumn {
+  id: number;
+  taskId: number;
+  userId: number;
+  content: string;
+}
+
+export class TaskComment implements ITaskComment {
+  id: number;
+  taskId: number;
+  userId: number;
+  content: string;
+
+  constructor(data: ITaskComment) {
+    this.id = data.id || null;
+    this.taskId = data.taskId || null;
+    this.userId = data.userId || null;
+    this.content = data.content || null;
+  }
+}
+
 export class Task implements ITask {
   id: number;
   name: string;
@@ -224,6 +269,8 @@ export class Task implements ITask {
   identifier: string;
   relationMode: string;
   relationId: number;
+  comments: ITaskComment[];
+  createdAt: Date;
 
   constructor(data: ITask) {
     this.id = data.id || null;
@@ -237,12 +284,15 @@ export class Task implements ITask {
     this.identifier = data.identifier || null;
     this.relationMode = data.relationMode || null;
     this.relationId = data.relationId || null;
+    this.createdAt = data.createdAt || null;
   }
 }
 
 export interface ITaskResponse extends Omit<ITask, 'projectId' | 'createdById' | 'assigneeId'> {
   createdBy: ISimplifiedUser;
   assignee: ISimplifiedUser;
+  comments: ITaskComment[];
+  history: ITaskLog[];
 }
 
 export class TaskResponse implements ITaskResponse {
@@ -256,6 +306,9 @@ export class TaskResponse implements ITaskResponse {
   identifier: string;
   relationMode: string;
   relationId: number;
+  comments: ITaskComment[];
+  history: ITaskLog[];
+  createdAt: Date;
 
   constructor(data: ITaskResponse) {
     this.id = data.id || null;
@@ -278,6 +331,9 @@ export class TaskResponse implements ITaskResponse {
     this.identifier = data.identifier || null;
     this.relationMode = data.relationMode || null;
     this.relationId = data.relationId || null;
+    this.comments = data.comments || [];
+    this.history = data.history || [];
+    this.createdAt = data.createdAt || null;
   }
 }
 
