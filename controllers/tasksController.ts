@@ -511,6 +511,12 @@ export async function addTaskComment(
     const { content } = req.body;
     const { id: taskId } = req.params;
 
+    const task = await TasksModel.findByPk(taskId).then((task) => task?.toJSON());
+
+    if (!task) {
+      return res.status(StatusCodes.NOT_FOUND).json({ error: 'Task not found' });
+    }
+
     const payload = {
       content,
       taskId,
@@ -518,8 +524,6 @@ export async function addTaskComment(
     };
 
     await TaskCommentModel.create(payload);
-
-    const task = await TasksModel.findByPk(taskId).then((task) => task?.toJSON());
 
     const permittedUsers = await ProjectUsers.findAll({ where: { projectId: task.projectId } }).then((users) =>
       users.map((user) => user.userId)
