@@ -5,45 +5,11 @@ import { compareObjects } from './helpers';
 
 let _wss = null;
 
-interface iMapParams {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  [key: string]: any;
-}
-
-class MapWithParams {
-  mainMap: Map<WebSocket, string>;
-  params: Map<WebSocket, iMapParams>;
-
-  constructor() {
-    this.mainMap = new Map();
-    this.params = new Map();
-  }
-
-  set(key: WebSocket, value: string, params: iMapParams | undefined) {
-    this.mainMap.set(key, value);
-    this.params.set(key, params);
-  }
-
-  get(key: WebSocket): string | undefined {
-    return this.mainMap.get(key);
-  }
-
-  getMapParams(key: WebSocket): iMapParams | undefined {
-    return this.params.get(key);
-  }
-
-  delete(key: WebSocket): boolean {
-    const resultMain = this.mainMap.delete(key);
-    const resultAdditional = this.params.delete(key);
-    return resultMain && resultAdditional;
-  }
-}
-
-const availableChannels = ['TasksIndexChannel'];
+const availableChannels = ['TasksIndexChannel', 'TaskIndexChannel'];
 
 const connectedClients: Set<WebSocket> = new Set();
 const clientUserIds: Map<WebSocket, number> = new Map();
-const clientChannels = new MapWithParams();
+let clientChannels = [];
 
 interface JwtPayload {
   id: number;
@@ -84,7 +50,7 @@ const startWebsocketServer = async () => {
                   channel,
                 },
               };
-              clientChannels.set(ws, channel, params);
+              clientChannels.push({ ws, channel, params });
               ws.send(JSON.stringify(subscribePayload));
             } else {
               ws.send(JSON.stringify({ type: 'error', message: 'Channel does not exist' }));
@@ -99,7 +65,7 @@ const startWebsocketServer = async () => {
                   channel,
                 },
               };
-              clientChannels.delete(ws);
+              clientChannels = clientChannels.filter((item) => compareObjects(item.ws, ws) && item.channel !== channel);
               ws.send(JSON.stringify(unsubscribePayload));
             } else {
               ws.send(JSON.stringify({ type: 'error', message: 'Channel does not exist' }));
@@ -114,7 +80,7 @@ const startWebsocketServer = async () => {
       ws.on('close', () => {
         connectedClients.delete(ws);
         clientUserIds.delete(ws);
-        clientChannels.delete(ws);
+        clientChannels = clientChannels.filter((item) => !compareObjects(item.ws, ws));
       });
 
       // Add userId to WS object
@@ -132,8 +98,8 @@ const sendWebSocketMessage = (payload) => {
   const { data, itemType, messageType, channel, channelParams, receiversIds } = payload || {};
   connectedClients.forEach((client) => {
     const receiverId = clientUserIds.get(client);
-    const clientChannel = clientChannels.get(client);
-    const clientParams = clientChannels.getMapParams(client);
+    const clientChannel = clientChannels.find((item) => item.ws === client && item.channel === channel)?.channel;
+    const clientParams = clientChannels.find((item) => item.ws === client && item.channel === channel)?.params;
 
     const webSocketOpen = client.readyState === WebSocket.OPEN;
     const channelMatch = clientChannel === channel;

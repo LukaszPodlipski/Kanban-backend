@@ -3,54 +3,99 @@ import { StatusCodes } from 'http-status-codes';
 import {
   IAuthenticatedRequestWithBody,
   IAuthenticatedRequestWithQuery,
-  ISpecificProjectParams,
+  ISpecificItemParams,
   TaskResponse,
+  SimplifiedTaskResponse,
+  iTasksFilters,
 } from '../database/types';
 import { errorHandler, authenticateProjectUser } from './utils';
 
 import {
-  specificProjectParamsSchema,
+  specificItemParamsSchema,
   getProjectResourceParamsSchema,
   createTaskBodySchema,
   moveTaskBodySchema,
+  addTaskCommentBodySchema,
 } from './validationSchemas';
 
 import ProjectUsers from '../database/models/projectUsers';
 import Users from '../database/models/users';
 import TasksModel from '../database/models/tasks';
+import TaskCommentModel from '../database/models/taskComments';
+import TaskLogsModel from '../database/models/taskLogs';
+import ProjectColumnsModel from '../database/models/projectColumns';
+
 import { Op, WhereOptions, Sequelize } from 'sequelize';
 
 import { sendWebSocketMessage } from '../websocket';
+import { oppositeRelationTypesMap } from './const/relationTypes';
 
-interface iTasksFilters {
-  assigneeIds?: string[];
-  query?: string;
-  [key: string]: string | string[] | undefined;
-}
+const getColumnNameById = async (columnId: number) => {
+  const column = await ProjectColumnsModel.findByPk(columnId).then((column) => column?.toJSON());
+  return column?.name;
+};
 
-const getTaskResponse = async (task) => {
+const getTaskResponse = async (task, simplified: boolean = false) => {
   const createdBy = await Users.findOne({ where: { id: task?.createdById } }).then((user) => user.toJSON());
   const assignee = task?.assigneeId ? await Users.findOne({ where: { id: task?.assigneeId } }) : null;
+  const comments = await TaskCommentModel.findAll({ where: { taskId: task?.id } }).then(
+    async (comments) =>
+      await Promise.all(
+        comments.map(async (comment) => {
+          const user = await Users.findOne({ where: { id: comment.userId } }).then((user) => user.toJSON());
+          return {
+            id: comment.id,
+            content: comment.content,
+            user: {
+              id: user.id,
+              avatarUrl: user.avatarUrl,
+              fullName: `${user.name} ${user.surname}`,
+            },
+            createdAt: comment.createdAt,
+          };
+        })
+      )
+  );
+  const history = await TaskLogsModel.findAll({ where: { taskId: task?.id } }).then(
+    async (logs) =>
+      await Promise.all(
+        logs.map(async (log) => {
+          const user = await Users.findOne({ where: { id: log.userId } }).then((user) => user.toJSON());
+          return {
+            id: log.id,
+            text: log.text,
+            user: {
+              id: user.id,
+              avatarUrl: user.avatarUrl,
+              fullName: `${user.name} ${user.surname}`,
+            },
+            createdAt: log.createdAt,
+          };
+        })
+      )
+  );
 
   const completeTask = {
     ...task,
     assignee,
     createdBy,
+    comments,
+    history,
   };
 
-  return new TaskResponse(completeTask);
+  return simplified ? new SimplifiedTaskResponse(completeTask) : new TaskResponse(completeTask);
 };
 
 /* -------------------------------- GET PROJECT TASKS --------------------------------- */
 export async function getProjectTasks(
-  req: IAuthenticatedRequestWithQuery<{ id: string; filters: iTasksFilters }>,
+  req: IAuthenticatedRequestWithQuery<{ projectId: string; filters: iTasksFilters }>,
   res: Response
 ) {
   try {
     await getProjectResourceParamsSchema.validate(req.query);
     await authenticateProjectUser(req);
 
-    const { id: projectId, filters } = req.query;
+    const { projectId, filters } = req.query;
     const { assigneeIds, query } = filters || {};
 
     let condition: WhereOptions = {
@@ -81,18 +126,34 @@ export async function getProjectTasks(
     }
 
     const tasks = await TasksModel.findAll({ where: condition });
-    const parsedTasks = await Promise.all(
-      tasks.map(async (task) => {
-        const createdBy = await Users.findOne({ where: { id: task?.createdById } });
-        const assignee = await Users.findOne({ where: { id: task?.assigneeId } });
+    const parsedTasks = await Promise.all(tasks.map((task) => getTaskResponse(task.toJSON(), true)));
 
-        return new TaskResponse({ ...task.toJSON(), createdBy, assignee });
-      })
-    );
-
-    res.json(parsedTasks);
+    return res.json(parsedTasks);
   } catch (err) {
-    console.log('err: ', err);
+    errorHandler(err, res);
+  }
+}
+
+/* -------------------------------- GET PROJECT TASK --------------------------------- */
+
+export async function getProjectTask(req: IAuthenticatedRequestWithQuery<{ projectId: string }>, res: Response) {
+  try {
+    await getProjectResourceParamsSchema.validate(req.query);
+    await authenticateProjectUser(req);
+
+    const { id: taskId } = req.params;
+
+    const task = await TasksModel.findByPk(taskId);
+
+    if (!task) return res.status(StatusCodes.NOT_FOUND).json({ error: 'Task not found' });
+
+    if (task.projectId !== Number(req.query.projectId))
+      return res.status(StatusCodes.FORBIDDEN).json({ error: 'You are not permitted to access this task' });
+
+    const taskResponse = await getTaskResponse(task.toJSON());
+
+    return res.json(taskResponse);
+  } catch (err) {
     errorHandler(err, res);
   }
 }
@@ -101,22 +162,21 @@ export async function getProjectTasks(
 
 export async function createTask(
   req: IAuthenticatedRequestWithBody<{
+    projectId: number;
     name: string;
     description: string;
-    createdById: number;
-    assigneeId: number;
-    projectColumnId: number;
-  }> & { params: ISpecificProjectParams },
+    assigneeId?: number;
+    projectColumnId?: number;
+    relationMode?: string;
+    relationId?: number;
+  }>,
   res: Response
 ) {
   try {
-    await specificProjectParamsSchema.validate(req.params);
     await createTaskBodySchema.validate(req.body);
     await authenticateProjectUser(req);
 
-    const { id: projectId } = req.params;
-
-    const { name, description, assigneeId, projectColumnId } = req.body;
+    const { name, description, assigneeId, projectColumnId, projectId, relationMode, relationId } = req.body;
 
     const columnTasks = await TasksModel.findAll({ where: { projectColumnId } });
     const lastTask = await TasksModel.findOne({
@@ -128,20 +188,30 @@ export async function createTask(
     const order = columnTasks.length + 1;
     const createdById = req.user.id;
 
-    const data = {
+    const taskData = {
       name,
       description,
       createdById,
       assigneeId: assigneeId || null,
-      projectId: Number(projectId),
+      projectId: projectId,
       projectColumnId: projectColumnId || null,
       order,
       identifier: `${lastIdentifier[0]}-${Number(lastIdentifier[1]) + 1}`,
+      relationMode: relationMode || null,
+      relationId: relationId || null,
     };
 
-    const task = await TasksModel.create(data);
+    const task = await TasksModel.create(taskData);
 
-    const taskResponse = await getTaskResponse(task.toJSON());
+    const logData = {
+      text: 'Created task',
+      taskId: task.id,
+      userId: req.user.id,
+    };
+
+    await TaskLogsModel.create(logData);
+
+    const taskResponse = await getTaskResponse(task.toJSON(), true);
 
     const permittedUsers = await ProjectUsers.findAll({ where: { projectId } }).then((users) => users.map((user) => user.userId));
 
@@ -162,16 +232,111 @@ export async function createTask(
   }
 }
 
+/* -------------------------------- UPDATE TASK --------------------------------- */
+
+export async function updateTask(
+  req: IAuthenticatedRequestWithBody<{
+    name?: string;
+    description?: string;
+    assigneeId?: number;
+    projectColumnId?: number;
+    relationMode?: string;
+    relationId?: number;
+  }> & { params: ISpecificItemParams },
+  res: Response
+) {
+  try {
+    await specificItemParamsSchema.validate(req.params);
+    await authenticateProjectUser(req);
+
+    const { name, description, assigneeId, projectColumnId, relationMode, relationId } = req.body;
+    const { id: taskId } = req.params;
+
+    const task = await TasksModel.findByPk(taskId).then((task) => task?.toJSON());
+
+    if (!task) {
+      return res.status(StatusCodes.NOT_FOUND).json({ error: 'Task not found' });
+    }
+
+    const permittedUsers = await ProjectUsers.findAll({ where: { projectId: task.projectId } }).then((users) =>
+      users.map((user) => user.userId)
+    );
+
+    const data = {
+      name: typeof name !== 'undefined' ? name : task.name,
+      description: typeof description !== 'undefined' ? description : task.description,
+      assigneeId: typeof assigneeId !== 'undefined' ? assigneeId : task.assigneeId,
+      projectColumnId: typeof projectColumnId !== 'undefined' ? projectColumnId : task.projectColumnId,
+      relationMode: typeof relationMode !== 'undefined' ? relationMode : task.relationMode,
+      relationId: typeof relationId !== 'undefined' ? relationId : task.relationId,
+    };
+
+    await TasksModel.update(data, { where: { id: taskId } });
+
+    if (typeof relationId !== 'undefined' && typeof relationMode !== 'undefined') {
+      const relationData = {
+        relationMode: oppositeRelationTypesMap[relationMode] || null,
+        relationId: relationId ? taskId : null,
+      };
+      const relationTask = await TasksModel.findByPk(relationId).then((task) => task?.toJSON());
+      await TasksModel.update(relationData, { where: { id: relationTask?.id || task.relationId } });
+    }
+
+    const logValuesDictionary = {
+      name: 'name',
+      description: 'description',
+      assigneeId: 'assignee',
+      projectColumnId: 'status',
+      relationId: 'relation',
+      relationMode: '',
+    };
+
+    const logData = {
+      text: `Updated task ${Object.entries(req.body)
+        .filter(([key, value]) => value && key !== 'projectId')
+        .map(([key, _]) => logValuesDictionary[key])
+        .filter((value) => value)
+        .join(', ')}`,
+      taskId: task.id,
+      userId: req.user.id,
+    };
+
+    await TaskLogsModel.create(logData);
+
+    const updatedTask = await TasksModel.findByPk(taskId).then((task) => task?.toJSON());
+
+    const taskResponse = await getTaskResponse(updatedTask);
+
+    const payload = {
+      data: taskResponse,
+      itemType: 'task',
+      messageType: 'update',
+      receiversIds: permittedUsers,
+    };
+
+    sendWebSocketMessage({ ...payload, channel: 'TasksIndexChannel', channelParams: { projectId: task.projectId } });
+    sendWebSocketMessage({
+      ...payload,
+      channel: 'TaskIndexChannel',
+      channelParams: { projectId: task.projectId, taskId: task.id },
+    });
+
+    return res.status(StatusCodes.OK).json(updatedTask);
+  } catch (err) {
+    errorHandler(err, res);
+  }
+}
+
 /* -------------------------------- MOVE TASK --------------------------------- */
 export async function moveTask(
   req: IAuthenticatedRequestWithBody<{
     targetColumnId: number;
     targetIndex: number;
-  }> & { params: ISpecificProjectParams },
+  }> & { params: ISpecificItemParams },
   res: Response
 ) {
   try {
-    await specificProjectParamsSchema.validate(req.params);
+    await specificItemParamsSchema.validate(req.params);
     await moveTaskBodySchema.validate(req.body);
 
     const { targetColumnId, targetIndex } = req.body;
@@ -245,7 +410,19 @@ export async function moveTask(
       };
     });
 
-    // 9. update all tasks orders in source column in database
+    // 9. create log
+    const previousColumnnName = await getColumnNameById(movedTask.projectColumnId);
+    const targetColumnName = await getColumnNameById(targetColumnId);
+
+    const logData = {
+      text: `Changed task status from ${previousColumnnName} to ${targetColumnName}`,
+      taskId: movedTask.id,
+      userId: req.user.id,
+    };
+
+    await TaskLogsModel.create(logData);
+
+    // 10. update all tasks orders in source column in database
     updatedTasksInSourceColumn.map(async (task) => {
       return await TasksModel.update(
         {
@@ -259,7 +436,7 @@ export async function moveTask(
       );
     });
 
-    // 10. update all tasks orders in target column in database
+    // 11. update all tasks orders in target column in database
     updatedTasksInTargetColumn.map(async (task) => {
       return await TasksModel.update(
         {
@@ -273,7 +450,7 @@ export async function moveTask(
       );
     });
 
-    // 11. update task column in database if column has changed
+    // 12. update task column in database if column has changed
     if (isColumnChange) {
       await TasksModel.update(
         {
@@ -287,9 +464,9 @@ export async function moveTask(
       );
     }
 
-    // 12. send websocket message with all updated tasks
+    // 13. send websocket message with all updated tasks
     [...updatedTasksInTargetColumn, ...updatedTasksInSourceColumn].forEach(async (task) => {
-      const taskResponse = await getTaskResponse(task);
+      const taskResponse = await getTaskResponse(task, true);
       const payload = {
         data: taskResponse,
         itemType: 'task',
@@ -300,6 +477,70 @@ export async function moveTask(
       };
       sendWebSocketMessage(payload);
     });
+
+    // 14. send websocket message with updated task
+    const taskResponse = await getTaskResponse({ ...movedTask, projectColumnId: targetColumnId });
+    const payload = {
+      data: taskResponse,
+      itemType: 'task',
+      messageType: 'update',
+      channel: 'TaskIndexChannel',
+      channelParams: { projectId: movedTask.projectId, taskId: movedTask.id },
+      receiversIds: permittedUsers,
+    };
+    sendWebSocketMessage(payload);
+
+    return res.status(StatusCodes.OK).send();
+  } catch (err) {
+    errorHandler(err, res);
+  }
+}
+
+/* -------------------------------- ADD TASK COMMENT --------------------------------- */
+
+export async function addTaskComment(
+  req: IAuthenticatedRequestWithBody<{
+    content: string;
+  }> & { params: ISpecificItemParams },
+  res: Response
+) {
+  try {
+    await specificItemParamsSchema.validate(req.params);
+    await addTaskCommentBodySchema.validate(req.body);
+
+    const { content } = req.body;
+    const { id: taskId } = req.params;
+
+    const task = await TasksModel.findByPk(taskId).then((task) => task?.toJSON());
+
+    if (!task) {
+      return res.status(StatusCodes.NOT_FOUND).json({ error: 'Task not found' });
+    }
+
+    const payload = {
+      content,
+      taskId,
+      userId: req.user.id,
+    };
+
+    await TaskCommentModel.create(payload);
+
+    const permittedUsers = await ProjectUsers.findAll({ where: { projectId: task.projectId } }).then((users) =>
+      users.map((user) => user.userId)
+    );
+
+    const taskResponse = await getTaskResponse(task);
+
+    const payloadToSend = {
+      data: taskResponse,
+      itemType: 'task',
+      messageType: 'update',
+      channel: 'TaskIndexChannel',
+      channelParams: { projectId: task.projectId, taskId: task.id },
+      receiversIds: permittedUsers,
+    };
+
+    sendWebSocketMessage(payloadToSend);
 
     return res.status(StatusCodes.OK).send();
   } catch (err) {

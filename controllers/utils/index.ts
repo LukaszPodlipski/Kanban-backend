@@ -37,7 +37,7 @@ export const verifyPassword = (password: string, hash: string) => {
 export const authenticateProjectUser = (req) => {
   return new Promise<void>(async (resolve, reject) => {
     const userId = req?.user?.id || null;
-    const projectId = req?.params?.id || req?.query?.id || null;
+    const projectId = req?.params?.projectId || req?.query?.projectId || req?.body?.projectId || req?.params?.id || null;
 
     const projectUser = await ProjectUsers.findOne({ where: { userId, projectId } });
 

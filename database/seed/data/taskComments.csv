@@ -1,0 +1,6 @@
+id,taskId,userId,content
+1,1,1,Pierwszy komentarz
+2,1,2,Drugi komentarz
+3,1,1,Trzeci komentarz
+4,1,3,Czwarty komentarz
+5,1,2,Piąty komentarz

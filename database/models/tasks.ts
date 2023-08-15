@@ -4,6 +4,8 @@ import { ITask } from 'database/types';
 
 import UserModel from './users';
 import ProjectsModel from './projects';
+import TaskCommentsModel from './taskComments';
+import TaskLogsModel from './taskLogs';
 
 interface TaskModel extends Model<ITask>, ITask {}
 
@@ -18,7 +20,7 @@ const TasksModel = sequelize.define<TaskModel>('tasks', {
     allowNull: false,
   },
   description: {
-    type: DataTypes.STRING,
+    type: DataTypes.TEXT,
     allowNull: true,
   },
   createdById: {
@@ -59,6 +61,14 @@ const TasksModel = sequelize.define<TaskModel>('tasks', {
     type: DataTypes.STRING,
     allowNull: false,
   },
+  relationMode: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  relationId: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+  },
 });
 
 UserModel.hasMany(TasksModel, { foreignKey: 'createdById', as: 'tasksCreatedBy' });
@@ -69,4 +79,10 @@ TasksModel.belongsTo(UserModel, { foreignKey: 'assigneeId', as: 'assignee' });
 
 ProjectsModel.hasMany(TasksModel, { foreignKey: 'projectId' });
 TasksModel.belongsTo(ProjectsModel, { foreignKey: 'projectId' });
+
+TasksModel.hasMany(TaskCommentsModel, { foreignKey: 'taskId' });
+TaskCommentsModel.belongsTo(TasksModel, { foreignKey: 'taskId' });
+
+TasksModel.hasMany(TaskLogsModel, { foreignKey: 'taskId' });
+TaskLogsModel.belongsTo(TasksModel, { foreignKey: 'taskId' });
 export default TasksModel;

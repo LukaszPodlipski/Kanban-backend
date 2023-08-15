@@ -2,14 +2,14 @@ import { Response } from 'express';
 import { StatusCodes } from 'http-status-codes';
 import {
   IAuthenticatedRequest,
-  ISpecificProjectParams,
+  ISpecificItemParams,
   IProjectDataResponse,
   ProjectDataResponse,
-  ProjectListItem,
+  SimplifiedProject,
 } from '../database/types';
 
 import { errorHandler, authenticateProjectUser } from './utils';
-import { specificProjectParamsSchema } from './validationSchemas';
+import { specificItemParamsSchema } from './validationSchemas';
 
 import ProjectsModel from '../database/models/projects';
 import ProjectUsersModel from '../database/models/projectUsers';
@@ -28,7 +28,7 @@ export const getUserProjectsList = async (req: IAuthenticatedRequest, res: Respo
     const projectsSimplifiedList = await Promise.all(
       projectsUser.map(async (project) => {
         const projectData = await ProjectsModel.findOne({ where: { id: project.projectId } });
-        return new ProjectListItem(projectData);
+        return new SimplifiedProject(projectData);
       })
     );
 
@@ -39,9 +39,9 @@ export const getUserProjectsList = async (req: IAuthenticatedRequest, res: Respo
 };
 
 /* -------------------------------- GET PROJECT DATA --------------------------------- */
-export const getProjectData = async (req: IAuthenticatedRequest & { params: ISpecificProjectParams }, res: Response) => {
+export const getProjectData = async (req: IAuthenticatedRequest & { params: ISpecificItemParams }, res: Response) => {
   try {
-    await specificProjectParamsSchema.validate(req.params);
+    await specificItemParamsSchema.validate(req.params);
     await authenticateProjectUser(req);
 
     const { id: projectId } = req.params;

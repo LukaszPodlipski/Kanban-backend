@@ -8,12 +8,12 @@ import ProjectsModel from '../database/models/projects';
 import ProjectUsers from '../database/models/projectUsers';
 import UsersModel from '../database/models/users';
 
-export async function getProjectMembers(req: IAuthenticatedRequestWithQuery<{ id: string }>, res: Response) {
+export async function getProjectMembers(req: IAuthenticatedRequestWithQuery<{ projectId: string }>, res: Response) {
   try {
     await getProjectResourceParamsSchema.validate(req.query);
     await authenticateProjectUser(req);
 
-    const { id: projectId } = req.query || {};
+    const { projectId } = req.query || {};
 
     const project = await ProjectsModel.findByPk(projectId);
 
