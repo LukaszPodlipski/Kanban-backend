@@ -339,7 +339,10 @@ export class TaskResponse implements ITaskResponse {
 
 export class SimplifiedTaskResponse
   implements
-    Pick<ITaskResponse, 'id' | 'name' | 'identifier' | 'description' | 'assignee' | 'projectColumnId' | 'order' | 'identifier'>
+    Pick<
+      ITaskResponse,
+      'id' | 'name' | 'identifier' | 'description' | 'assignee' | 'projectColumnId' | 'order' | 'identifier' | 'createdAt'
+    >
 {
   id: number;
   name: string;
@@ -348,6 +351,7 @@ export class SimplifiedTaskResponse
   assignee: ISimplifiedUser;
   projectColumnId: number;
   order: number;
+  createdAt: Date;
 
   constructor(data: ITaskResponse) {
     this.id = data.id || null;
@@ -363,6 +367,7 @@ export class SimplifiedTaskResponse
           avatarUrl: data.assignee.avatarUrl || null,
         }
       : null;
+    this.createdAt = data.createdAt;
   }
 }
 

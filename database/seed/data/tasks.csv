@@ -1,4 +1,24 @@
 id,name,description,createdById,assigneeId,projectId,projectColumnId,order,identifier,relationMode,relationId
 1,Pierwszy task R2,Opis pierwszego taska,1,1,1,1,2,PIE-1,Related to,2
 2,Drugi task R1,Opis drugiego taska,1,2,1,2,1,PIE-2,Related to,1
-3,Trzeci task,Opis trzeciego taska,1,3,1,1,1,PIE-3
+3,Trzeci task,Opis trzeciego taska,1,3,1,1,3,PIE-3
+4,Czwarty task (backlog),Opis backlog taska,1,1,1,,4,PIE-4,
+5,Piąty task (backlog), Opis piatego taska,1,1,1,,5,PIE-5
+6,Szósty task,Opis szóstego taska,1,1,1,,6,PIE-6
+7,Siódmy task,Opis siódmego taska,2,1,1,,7,PIE-7
+8,Ósmy task,Opis ósmego taska,3,3,1,,8,PIE-8
+9,Dziewiąty task,Opis dziewiątego taska,3,2,1,,9,PIE-9
+10,Dziesiąty task,Opis dziesiątego taska,1,2,1,,10,PIE-10
+11,Jedenasty task,Opis jedenastego taska,1,1,1,,11,PIE-11
+12,Dwunasty task,Opis dwunastego taska,1,1,1,,12,PIE-12
+13,Trzynasty task,Opis trzynastego taska,3,2,1,,13,PIE-13
+14,Czternasty task,Opis czternastego taska,3,2,1,,14,PIE-14
+15,Piętnasty task,Opis piętnastego taska,1,1,1,,15,PIE-15
+16,Szesnansty task,Opis szesnanstego taska,2,1,1,,16,PIE-16
+17,Siedemnast task,Opis siedemnastego taska,3,3,1,,17,PIE-17
+18,Osiemnasty task,Opis dziewietnastego taska,3,2,1,,18,PIE-18
+19,Dziewietnasty task,Opis dwudziestego taska,1,2,1,,19,PIE-19
+20,Dwudziesty task,Opis dwudziestego pierwszego taska,1,1,1,,20,PIE-21
+21,Dwudziesty pierwszy task,Opis dwudziestego drugiegi taska,1,1,1,,22,PIE-22
+22,Dwudziesty drugi task,Opis dwudziestego trzeciego taska,3,2,1,,23,PIE-23
+23,Dwudziesty trzeci task,Opis dwudziestego czwartego taska,3,2,1,,24,PIE-24
