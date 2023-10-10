@@ -68,13 +68,44 @@ export class UserResponse implements IUserResponse {
   surname: string;
   email: string;
   avatarUrl: string;
+  fullName: string;
+  role: roleType;
 
   constructor(data: IUser) {
     this.id = data.id;
     this.name = data.name;
     this.surname = data.surname;
+    this.fullName = `${data.name} ${data.surname}`;
     this.email = data.email;
     this.avatarUrl = data.avatarUrl || '';
+  }
+}
+/* -------------------------------- MEMBERS ------------------------------- */
+export interface IMember extends IUserResponse {
+  role: roleType;
+  createdAt?: string;
+}
+
+export class Member implements IMember {
+  id: number;
+  name: string;
+  surname: string;
+  email: string;
+  avatarUrl: string;
+  fullName: string;
+  role: roleType;
+  createdAt?: string;
+  memberId: number;
+
+  constructor(data: IMember) {
+    this.id = data.id;
+    this.name = data.name;
+    this.surname = data.surname;
+    this.fullName = `${data.name} ${data.surname}`;
+    this.email = data.email;
+    this.avatarUrl = data.avatarUrl || '';
+    this.role = data.role;
+    this.createdAt = data.createdAt?.toString();
   }
 }
 
@@ -116,6 +147,7 @@ export class SimplifiedProject implements Pick<IProject, 'id' | 'name'> {
 export interface IProjectDataResponse extends Omit<IProject, keyof IDatabaseColumn> {
   userId?: number;
   members?: ISimplifiedUser[];
+  role: roleType;
 }
 
 export class ProjectDataResponse implements IProjectDataResponse {
@@ -124,33 +156,38 @@ export class ProjectDataResponse implements IProjectDataResponse {
   description?: string;
   prefix: string;
   ownerId: number;
-  isOwner: boolean;
+  role: roleType;
 
   constructor(data: IProjectDataResponse) {
     this.id = data.id;
     this.name = data.name;
     this.description = data.description;
     this.prefix = data.prefix;
-    this.isOwner = data?.ownerId === data?.userId || false;
+    this.role = data.role;
   }
 }
 
 /* -------------------------------- PROJECT USER ------------------------------- */
+
+type roleType = 'Owner' | 'Maintainer' | 'Editor' | 'Viewer';
 export interface IProjectUser extends IDatabaseColumn {
   id: number;
   userId: number;
   projectId: number;
+  role: roleType;
 }
 
 export class ProjectUser implements IProjectUser {
   id: number;
   userId: number;
   projectId: number;
+  role: roleType;
 
   constructor(data: IProjectUser) {
     this.id = data.id;
     this.userId = data.userId;
     this.projectId = data.projectId;
+    this.role = data.role;
   }
 }
 

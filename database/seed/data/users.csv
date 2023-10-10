@@ -3,3 +3,4 @@ id,name,surname,email,password,avatarUrl
 2,Andrzej,Podlipski,andrzejpodlipski@gmail.com,admin1234,https://www.w3schools.com/howto/img_avatar.png
 3,Jan,Kowalski,jakkowalski@gmail.com,admin1234,https://www.w3schools.com/w3images/avatar2.png
 4,Adam,Mickiewicz,adammickiewicz@gmail.com,admin1234,https://static.vecteezy.com/ti/vetor-gratis/p3/14391422-de-icone-de-avatar-de-homem-plano-vetor.jpg
+5,Juliusz,Słowacki,juliuszslowacki@gmail.com,admin1234,https://cdn-icons-png.flaticon.com/512/3135/3135715.png

@@ -1,6 +1,7 @@
-id,userId,projectId
-1,1,1
-2,1,2
-3,2,1
-4,3,1
-5,4,1
+id,userId,projectId,role
+1,1,1,Owner
+2,2,1,Editor
+3,3,1,Viewer
+4,4,1,Maintainer
+5,1,2,Maintainer
+6,2,2,Editor

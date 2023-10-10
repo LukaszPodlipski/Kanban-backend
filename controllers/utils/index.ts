@@ -72,3 +72,7 @@ export const errorHandler = (err: Error, res: Response) => {
     return;
   }
 };
+
+export const isProjectAdmin = (role) => {
+  return ['Owner', 'Maintainer'].includes(role);
+};

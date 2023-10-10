@@ -5,7 +5,7 @@ import { compareObjects } from './helpers';
 
 let _wss = null;
 
-const availableChannels = ['TasksIndexChannel', 'TaskIndexChannel'];
+const availableChannels = ['TasksIndexChannel', 'TaskIndexChannel', 'MembersIndexChannel', 'MemberIndexChannel'];
 
 const connectedClients: Set<WebSocket> = new Set();
 const clientUserIds: Map<WebSocket, number> = new Map();
