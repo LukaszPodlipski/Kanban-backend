@@ -48,10 +48,12 @@ export const getProjectData = async (req: IAuthenticatedRequest & { params: ISpe
     const { id: userId } = req.user;
 
     const project = await ProjectsModel.findByPk(projectId);
+    const projectUser = await ProjectUsersModel.findOne({ where: { projectId, userId } }).then((user) => user?.toJSON());
 
     const projectData: IProjectDataResponse = new ProjectDataResponse({
       ...project.toJSON(),
       userId,
+      role: projectUser.role,
     });
 
     res.json(projectData);

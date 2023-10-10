@@ -26,6 +26,10 @@ const ProjectUsersModel = sequelize.define<ProjectUserModel>('project_users', {
       key: 'id',
     },
   },
+  role: {
+    type: DataTypes.STRING,
+    allowNull: false,
+  },
 });
 
 export default ProjectUsersModel;

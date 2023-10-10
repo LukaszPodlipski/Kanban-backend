@@ -33,3 +33,20 @@ export const getProjectResourceParamsSchema = yup.object().shape({
 export const addTaskCommentBodySchema = yup.object().shape({
   content: yup.string().required('Content is required'),
 });
+
+export const updateMemberBodySchema = yup.object().shape({
+  role: yup.string(),
+});
+
+export const inviteMembersParamsSchema = yup.object().shape({
+  projectId: yup.string().required('Project id is required'),
+  users: yup
+    .array()
+    .of(
+      yup.object().shape({
+        id: yup.number().required(),
+        role: yup.string().required(),
+      })
+    )
+    .required('Users are required'),
+});
