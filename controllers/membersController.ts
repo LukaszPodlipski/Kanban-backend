@@ -136,6 +136,11 @@ export async function checkMemberEmailExistance(
       return;
     }
 
+    if (user.id === req.user.id) {
+      res.status(StatusCodes.FORBIDDEN).json({ error: 'You already belong to this project' });
+      return;
+    }
+
     const { id, avatarUrl } = user;
 
     res.json({ email, id, avatarUrl });
