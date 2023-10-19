@@ -164,7 +164,7 @@ export async function createTask(
   req: IAuthenticatedRequestWithBody<{
     projectId: number;
     name: string;
-    description: string;
+    description?: string;
     assigneeId?: number;
     projectColumnId?: number;
     relationMode?: string;
