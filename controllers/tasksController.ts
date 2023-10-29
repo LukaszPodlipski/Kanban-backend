@@ -75,8 +75,13 @@ const getTaskResponse = async (task, simplified: boolean = false) => {
       )
   );
 
+  const relatedTask = task?.relationId ? await TasksModel.findByPk(task?.relationId).then((task) => task?.toJSON()) : null;
+
+  const { relationId: _, ...taskData } = task;
+
   const completeTask = {
-    ...task,
+    ...taskData,
+    relatedTask,
     assignee,
     createdBy,
     comments,
@@ -206,7 +211,7 @@ export async function createTask(
     const logData = {
       text: 'Created task',
       taskId: task.id,
-      userId: req.user.id,
+      userId: Number(req.user.id),
     };
 
     await TaskLogsModel.create(logData);
