@@ -50,3 +50,14 @@ export const inviteMembersParamsSchema = yup.object().shape({
     )
     .required('Users are required'),
 });
+
+export const updateColumnsBodySchema = yup.array().of(
+  yup.object().shape({
+    id: yup.number().required('Column id is required').moreThan(0),
+    order: yup.number().required('Order is required').moreThan(0),
+    name: yup.string().required('Name is required'),
+    description: yup.string().nullable(),
+    color: yup.string(),
+    type: yup.string().nullable(),
+  })
+);

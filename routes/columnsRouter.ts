@@ -3,9 +3,10 @@ import { authenticateToken } from '../controllers/authMiddleware';
 
 const router = express.Router();
 
-import { getProjectColumns, createColumn } from '../controllers/columnsController';
+import { getProjectColumns, createColumn, updateColumns } from '../controllers/columnsController';
 
 router.get('/', authenticateToken, getProjectColumns);
 router.post('/', authenticateToken, createColumn);
+router.patch('/', authenticateToken, updateColumns);
 
 export default router;

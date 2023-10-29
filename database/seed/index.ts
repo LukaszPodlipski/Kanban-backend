@@ -75,7 +75,9 @@ async function seedModel(seed) {
         const data = row.password ? { ...row, password: await hashPassword(row.password) } : row;
         await seed.model.create(seed.dataModel(data));
         await sequelize.query(
-          `SELECT setval('${`${seed.model.getTableName()}_id_seq`}', max(${data.id})) FROM "${camelToSnakeCase(seed.name)}";`
+          `SELECT setval('${`${seed.model.getTableName()}_id_seq`}', max(${Number(data.id) + 1})) FROM "${camelToSnakeCase(
+            seed.name
+          )}";`
         );
       })
       .on('end', () => {
@@ -93,8 +95,8 @@ export async function seedDatabase() {
     const tableName = seed.model.getTableName();
     await sequelize.query(`ALTER TABLE "${tableName}" DISABLE TRIGGER ALL`); //  disables all triggers (including foreign key constraints) for the table being seeded
     await seedModel(seed);
-    await sequelize.query(`ALTER TABLE "${tableName}" ENABLE TRIGGER ALL`);
     // await sequelize.query(`ALTER SEQUENCE ${`${seed.model.getTableName()}_id_seq`} RESTART WITH ${3}`);
+    await sequelize.query(`ALTER TABLE "${tableName}" ENABLE TRIGGER ALL`);
   }
 }
 
