@@ -192,12 +192,15 @@ export class ProjectUser implements IProjectUser {
 }
 
 /* -------------------------------- PROJECT COLUMN ------------------------------- */
+type columnsTypesType = 'start' | 'end' | null;
 export interface IProjectColumn extends IDatabaseColumn {
   id: number;
   name: string;
   projectId: number;
   order: number;
   color: string;
+  type: columnsTypesType;
+  description?: string;
 }
 
 export class ProjectColumn implements IProjectColumn {
@@ -206,6 +209,8 @@ export class ProjectColumn implements IProjectColumn {
   projectId: number;
   order: number;
   color: string;
+  type: columnsTypesType;
+  description?: string;
 
   constructor(data: IProjectColumn) {
     this.id = data.id || null;
@@ -213,6 +218,8 @@ export class ProjectColumn implements IProjectColumn {
     this.projectId = data.projectId || null;
     this.order = data.order || null;
     this.color = data.color || null;
+    this.type = data.type || null;
+    this.description = data.description || null;
   }
 }
 
@@ -330,6 +337,7 @@ export interface ITaskResponse extends Omit<ITask, 'projectId' | 'createdById' |
   assignee: ISimplifiedUser;
   comments: ITaskComment[];
   history: ITaskLog[];
+  relatedTask?: (SimplifiedTaskResponse & { relationMode: string }) | null;
 }
 
 export class TaskResponse implements ITaskResponse {
@@ -346,6 +354,7 @@ export class TaskResponse implements ITaskResponse {
   comments: ITaskComment[];
   history: ITaskLog[];
   createdAt: Date;
+  relatedTask: (SimplifiedTaskResponse & { relationMode: string }) | null;
 
   constructor(data: ITaskResponse) {
     this.id = data.id || null;
@@ -366,11 +375,11 @@ export class TaskResponse implements ITaskResponse {
         }
       : null;
     this.identifier = data.identifier || null;
-    this.relationMode = data.relationMode || null;
     this.relationId = data.relationId || null;
     this.comments = data.comments || [];
     this.history = data.history || [];
     this.createdAt = data.createdAt || null;
+    this.relatedTask = { ...data.relatedTask, relationMode: data.relationMode } || null;
   }
 }
 
