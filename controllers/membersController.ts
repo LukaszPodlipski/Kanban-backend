@@ -8,6 +8,7 @@ import { sendWebSocketMessage } from '../websocket';
 import ProjectsModel from '../database/models/projects';
 import ProjectUsers from '../database/models/projectUsers';
 import UsersModel from '../database/models/users';
+import TasksModel from '../database/models/tasks';
 
 const getParsedMember = async (projectId: number, userId: number) => {
   const user = await UsersModel.findByPk(userId).then((user) => user?.toJSON());
@@ -212,6 +213,12 @@ export async function deleteMember(req: IAuthenticatedRequestWithQuery<{ id: str
       res.status(StatusCodes.FORBIDDEN).json({ error: 'You cannot reomove maintainer from project' });
       return;
     }
+
+    // 5. Null all tasks assigned to member
+    const memberTasks = await TasksModel.findAll({ where: { assigneeId: memberId } });
+    await Promise.all(memberTasks.map((task) => task.update({ assigneeId: null })));
+
+    // 6. Delete member
 
     await member.destroy();
 
