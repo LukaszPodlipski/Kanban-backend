@@ -61,3 +61,27 @@ export const getProjectData = async (req: IAuthenticatedRequest & { params: ISpe
     errorHandler(err, res);
   }
 };
+
+/* -------------------------------- UPDATE PROJECT DATA --------------------------------- */
+export const updateProjectData = async (req: IAuthenticatedRequest & { params: ISpecificItemParams }, res: Response) => {
+  try {
+    await specificItemParamsSchema.validate(req.params);
+    await authenticateProjectUser(req);
+
+    const { id: projectId } = req.params;
+
+    const project = await ProjectsModel.findByPk(projectId);
+
+    if (!project) {
+      res.status(StatusCodes.NOT_FOUND).json({ error: 'Project not found' });
+      return;
+    }
+
+    const { name, description } = req.body;
+
+    await project.update({ name, description });
+    return res.status(StatusCodes.OK).send();
+  } catch (err) {
+    errorHandler(err, res);
+  }
+};

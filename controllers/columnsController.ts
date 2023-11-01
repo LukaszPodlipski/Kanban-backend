@@ -9,10 +9,13 @@ import {
   updateColumnsBodySchema,
 } from './validationSchemas';
 
+import ProjectUsers from '../database/models/projectUsers';
 import ProjectsModel from '../database/models/projects';
 import TasksModel from '../database/models/tasks';
 import TaskLogsModel from '../database/models/taskLogs';
 import ProjectColumnsModel from '../database/models/projectColumns';
+
+import { sendWebSocketMessage } from '../websocket';
 
 /* -------------------------------- GET PROJECT COLUMNS --------------------------------- */
 export async function getProjectColumns(req: IAuthenticatedRequestWithQuery<{ projectId: string }>, res: Response) {
@@ -82,6 +85,8 @@ export async function updateColumns(req: IAuthenticatedRequestWithQuery<{ projec
       return;
     }
 
+    const permittedUsers = await ProjectUsers.findAll({ where: { projectId } }).then((users) => users.map((user) => user.userId));
+
     await Promise.all(
       columns.map(async (column: IProjectColumn & { toDelete: boolean }) => {
         const { id, order, name, description, color, type, toDelete } = column;
@@ -93,8 +98,16 @@ export async function updateColumns(req: IAuthenticatedRequestWithQuery<{ projec
           return;
         }
 
+        const WSpayload = {
+          itemType: 'column',
+          channel: 'ColumnsIndexChannel',
+          channelParams: { projectId },
+          receiversIds: permittedUsers,
+        };
+
         if (toDelete) {
           const tasksToUpdate = await TasksModel.findAll({ where: { projectColumnId: id } });
+
           await Promise.all(
             tasksToUpdate.map(async (taskInstance) => {
               await taskInstance.update({ projectColumnId: null });
@@ -106,11 +119,14 @@ export async function updateColumns(req: IAuthenticatedRequestWithQuery<{ projec
               await TaskLogsModel.create(logData);
             })
           );
+
           await columnToUpdate.destroy();
+          sendWebSocketMessage({ ...WSpayload, data: columnToUpdate, messageType: 'delete' });
           return;
         }
 
         await columnToUpdate.update({ order, name, description, color, type });
+        sendWebSocketMessage({ ...WSpayload, data: columnToUpdate, messageType: 'update' });
       })
     );
 
