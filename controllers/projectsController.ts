@@ -14,6 +14,8 @@ import { specificItemParamsSchema } from './validationSchemas';
 import ProjectsModel from '../database/models/projects';
 import ProjectUsersModel from '../database/models/projectUsers';
 
+import { sendWebSocketMessage } from '../websocket';
+
 /* -------------------------------- GET LIST OF USER'S PROJECTS --------------------------------- */
 export const getUserProjectsList = async (req: IAuthenticatedRequest, res: Response) => {
   try {
@@ -68,7 +70,8 @@ export const updateProjectData = async (req: IAuthenticatedRequest & { params: I
     await specificItemParamsSchema.validate(req.params);
     await authenticateProjectUser(req);
 
-    const { id: projectId } = req.params;
+    const { id } = req.params;
+    const projectId = Number(id);
 
     const project = await ProjectsModel.findByPk(projectId);
 
@@ -79,7 +82,25 @@ export const updateProjectData = async (req: IAuthenticatedRequest & { params: I
 
     const { name, description } = req.body;
 
-    await project.update({ name, description });
+    const updatePayload = { name: name || project.name, description: description || project.description };
+
+    await project.update(updatePayload);
+
+    const permittedUsers = await ProjectUsersModel.findAll({ where: { projectId } }).then((users) =>
+      users.map((user) => user.userId)
+    );
+
+    const WSPayload = {
+      data: updatePayload,
+      itemType: 'project',
+      messageType: 'update',
+      channel: 'ProjectIndexChannel',
+      channelParams: { projectId },
+      receiversIds: permittedUsers,
+    };
+
+    sendWebSocketMessage(WSPayload);
+
     return res.status(StatusCodes.OK).send();
   } catch (err) {
     errorHandler(err, res);
