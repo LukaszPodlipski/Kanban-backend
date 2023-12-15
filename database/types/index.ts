@@ -3,7 +3,7 @@ import { Model } from 'sequelize';
 import { ParsedQs } from 'qs';
 
 /* ------------------------------ DATA BASE ---------------------------- */
-interface IDatabaseColumn {
+export interface IDatabaseColumn {
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -127,10 +127,10 @@ export class Project implements IProject {
 
   constructor(data: IProject) {
     this.id = data.id;
-    this.name = data.name;
-    this.description = data.description;
-    this.ownerId = data.ownerId;
-    this.prefix = data.prefix;
+    this.name = data.name || '';
+    this.description = data.description || '';
+    this.ownerId = data.ownerId || null;
+    this.prefix = data.prefix || '';
   }
 }
 

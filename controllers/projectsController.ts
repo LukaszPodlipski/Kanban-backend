@@ -9,12 +9,14 @@ import {
 } from '../database/types';
 
 import { errorHandler, authenticateProjectUser } from './utils';
-import { specificItemParamsSchema } from './validationSchemas';
+import { specificItemParamsSchema, createProjectBodySchema } from './validationSchemas';
 
 import ProjectsModel from '../database/models/projects';
 import ProjectUsersModel from '../database/models/projectUsers';
-
+import ProjectColumnsModel from '../database/models/projectColumns';
 import { sendWebSocketMessage } from '../websocket';
+
+import { sendProjectInvitation } from './membersController';
 
 /* -------------------------------- GET LIST OF USER'S PROJECTS --------------------------------- */
 export const getUserProjectsList = async (req: IAuthenticatedRequest, res: Response) => {
@@ -102,6 +104,48 @@ export const updateProjectData = async (req: IAuthenticatedRequest & { params: I
     sendWebSocketMessage(WSPayload);
 
     return res.status(StatusCodes.OK).send();
+  } catch (err) {
+    errorHandler(err, res);
+  }
+};
+
+/* -------------------------------- CREATE PROJECT --------------------------------- */
+export const createProject = async (req: IAuthenticatedRequest, res: Response) => {
+  try {
+    const { id: userId } = req.user;
+    const { name, prefix, description, members, columns } = req.body;
+
+    // 1. Check request body schema
+    await createProjectBodySchema.validate(req.body);
+
+    // 2. Create project
+    const newProject = await ProjectsModel.create({ name, prefix, description, ownerId: userId });
+
+    // 3. Create first project user
+    await ProjectUsersModel.create({ userId, projectId: newProject.id, role: 'Owner' });
+
+    // 4. Create project column
+    columns?.forEach((column) => {
+      const { name, description, color, order } = column;
+      ProjectColumnsModel.create({ name, description, color, order, projectId: newProject.id });
+    });
+
+    // 5. Invite project members
+    await sendProjectInvitation({ projectId: newProject.id, members });
+
+    // 6. Send websocket message to project creator
+    const WSPayload = {
+      data: newProject,
+      itemType: 'project',
+      messageType: 'create',
+      channel: 'UserProjectsIndexChannel',
+      channelParams: {},
+      receiversIds: [userId],
+    };
+
+    sendWebSocketMessage(WSPayload);
+
+    res.status(StatusCodes.CREATED).json(newProject);
   } catch (err) {
     errorHandler(err, res);
   }
