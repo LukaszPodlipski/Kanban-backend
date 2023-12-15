@@ -61,3 +61,29 @@ export const updateColumnsBodySchema = yup.array().of(
     type: yup.string().nullable(),
   })
 );
+
+export const createProjectBodySchema = yup.object().shape({
+  name: yup.string().required('Name is required'),
+  prefix: yup.string().required('Prefix is required'),
+  description: yup.string().nullable(),
+  members: yup
+    .array()
+    .of(
+      yup.object().shape({
+        id: yup.number().required('User id is required').moreThan(0),
+        role: yup.string().required('Role is required'),
+      })
+    )
+    .nullable(),
+  columns: yup
+    .array()
+    .of(
+      yup.object().shape({
+        name: yup.string().required('Name is required'),
+        description: yup.string().nullable(),
+        color: yup.string(),
+        order: yup.number().required('Order is required').moreThan(0),
+      })
+    )
+    .nullable(),
+});

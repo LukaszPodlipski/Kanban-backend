@@ -12,6 +12,7 @@ const availableChannels = [
   'MemberIndexChannel',
   'ColumnsIndexChannel',
   'ProjectIndexChannel',
+  'UserProjectsIndexChannel',
 ];
 
 const connectedClients: Set<WebSocket> = new Set();

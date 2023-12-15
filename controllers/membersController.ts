@@ -10,17 +10,7 @@ import ProjectUsers from '../database/models/projectUsers';
 import UsersModel from '../database/models/users';
 import TasksModel from '../database/models/tasks';
 
-const getParsedMember = async (projectId: number, userId: number) => {
-  const user = await UsersModel.findByPk(userId).then((user) => user?.toJSON());
-  const projectUser = await ProjectUsers.findOne({ where: { userId, projectId } }).then((projectUser) => projectUser?.toJSON());
-  const memberData = {
-    ...user,
-    createdAt: projectUser?.createdAt.toString(),
-    role: projectUser?.role,
-  };
-  return new Member(memberData);
-};
-
+/* -------------------------------- GET PROJECT MEMBERS --------------------------------- */
 export async function getProjectMembers(req: IAuthenticatedRequestWithQuery<{ projectId: string }>, res: Response) {
   try {
     await getProjectResourceParamsSchema.validate(req.query);
@@ -49,6 +39,19 @@ export async function getProjectMembers(req: IAuthenticatedRequestWithQuery<{ pr
   }
 }
 
+/* -------------------------------- GET PARSED PROJECT MEMBERS (UTILITY FUNCTION) --------------------------------- */
+const getParsedMember = async (projectId: number, userId: number) => {
+  const user = await UsersModel.findByPk(userId).then((user) => user?.toJSON());
+  const projectUser = await ProjectUsers.findOne({ where: { userId, projectId } }).then((projectUser) => projectUser?.toJSON());
+  const memberData = {
+    ...user,
+    createdAt: projectUser?.createdAt.toString(),
+    role: projectUser?.role,
+  };
+  return new Member(memberData);
+};
+
+/* -------------------------------- GET PRJECT MEMBER INFO --------------------------------- */
 export async function getProjectMember(req: IAuthenticatedRequestWithQuery<{ projectId: string }>, res: Response) {
   try {
     await getProjectResourceParamsSchema.validate(req.query);
@@ -78,6 +81,7 @@ export async function getProjectMember(req: IAuthenticatedRequestWithQuery<{ pro
   }
 }
 
+/* -------------------------------- UPDATE MEMBER ROLE --------------------------------- */
 export async function updateMember(req: IAuthenticatedRequestWithQuery<{ projectId: string }>, res: Response) {
   try {
     await updateMemberBodySchema.validate(req.query);
@@ -120,6 +124,7 @@ export async function updateMember(req: IAuthenticatedRequestWithQuery<{ project
   }
 }
 
+/* ------------------------ CHECK USER EXISTANCE BEFORE INVITATION ------------------------ */
 export async function checkMemberEmailExistance(
   req: IAuthenticatedRequestWithQuery<{ projectId: string; email: string }>,
   res: Response
@@ -155,6 +160,7 @@ type invitedMemberType = {
   role: string;
 };
 
+/* -------------------------------- DELETE PROJECT MEMBER --------------------------------- */
 export async function inviteMembers(
   req: IAuthenticatedRequestWithBody<{
     users: invitedMemberType[];
@@ -173,6 +179,14 @@ export async function inviteMembers(
   }
 }
 
+/* -------------------------------- SEND PROJECT INVITATION (UTILITY FUNCTION) --------------------------------- */
+export const sendProjectInvitation = async (data: unknown) => {
+  try {
+    console.log('data: ', data);
+  } catch (err) {}
+};
+
+/* -------------------------------- DELETE PROJECT MEMBER --------------------------------- */
 export async function deleteMember(req: IAuthenticatedRequestWithQuery<{ id: string }>, res: Response) {
   try {
     const { id: memberId } = req.params || {};
@@ -214,7 +228,7 @@ export async function deleteMember(req: IAuthenticatedRequestWithQuery<{ id: str
       return;
     }
 
-    // 5. Null all tasks assigned to member
+    // 5. Null assigneeId param in all tasks assigned to member
     const memberTasks = await TasksModel.findAll({ where: { assigneeId: memberId } });
     await Promise.all(memberTasks.map((task) => task.update({ assigneeId: null })));
 
