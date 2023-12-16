@@ -12,6 +12,7 @@ import { errorHandler, authenticateProjectUser } from './utils';
 import { specificItemParamsSchema, createProjectBodySchema } from './validationSchemas';
 
 import ProjectsModel from '../database/models/projects';
+import TasksModel from '../database/models/tasks';
 import ProjectUsersModel from '../database/models/projectUsers';
 import ProjectColumnsModel from '../database/models/projectColumns';
 import { sendWebSocketMessage } from '../websocket';
@@ -146,6 +147,65 @@ export const createProject = async (req: IAuthenticatedRequest, res: Response) =
     sendWebSocketMessage(WSPayload);
 
     res.status(StatusCodes.CREATED).json(newProject);
+  } catch (err) {
+    errorHandler(err, res);
+  }
+};
+
+/* -------------------------------- DELETE PROJECT --------------------------------- */
+// remove all column, project users, and tasks related to this project
+export const deleteProject = async (req: IAuthenticatedRequest & { params: ISpecificItemParams }, res: Response) => {
+  try {
+    await specificItemParamsSchema.validate(req.params);
+    await authenticateProjectUser(req);
+
+    const { id } = req.params;
+    const projectId = Number(id);
+
+    const project = await ProjectsModel.findByPk(projectId);
+
+    if (!project) {
+      res.status(StatusCodes.NOT_FOUND).json({ error: 'Project not found' });
+      return;
+    }
+
+    // Check if user is project owner
+    const { role } = await ProjectUsersModel.findOne({ where: { projectId, userId: req.user.id } }).then((user) =>
+      user?.toJSON()
+    );
+
+    if (role !== 'Owner') {
+      res.status(StatusCodes.FORBIDDEN).json({ error: 'You are not allowed to delete this project' });
+      return;
+    }
+
+    // Delete flow
+
+    // 1. Delete project tasks
+    await TasksModel.destroy({ where: { projectId } });
+
+    // 2. Delete project columns
+    await ProjectColumnsModel.destroy({ where: { projectId } });
+
+    // 3. Delete project users
+    await ProjectUsersModel.destroy({ where: { projectId } });
+
+    // 4. Delete project
+    await project.destroy();
+
+    // 5. Send websocket message to project creator
+    const WSPayload = {
+      data: project,
+      itemType: 'project',
+      messageType: 'delete',
+      channel: 'UserProjectsIndexChannel',
+      channelParams: {},
+      receiversIds: [project.ownerId],
+    };
+
+    sendWebSocketMessage(WSPayload);
+
+    res.status(StatusCodes.OK).send();
   } catch (err) {
     errorHandler(err, res);
   }
