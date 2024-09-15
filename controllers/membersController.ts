@@ -45,6 +45,8 @@ const getParsedMember = async (projectId: number, userId: number) => {
   const projectUser = await ProjectUsers.findOne({ where: { userId, projectId } }).then((projectUser) => projectUser?.toJSON());
   const memberData = {
     ...user,
+    id: projectUser?.id,
+    userId: user?.id,
     createdAt: projectUser?.createdAt.toString(),
     role: projectUser?.role,
   };
@@ -58,7 +60,7 @@ export async function getProjectMember(req: IAuthenticatedRequestWithQuery<{ pro
     await authenticateProjectUser(req);
 
     const { projectId } = req.query || {};
-    const { id: userId } = req.params || {};
+    const { id: memberId } = req.params || {};
 
     const project = await ProjectsModel.findByPk(projectId);
 
@@ -67,14 +69,14 @@ export async function getProjectMember(req: IAuthenticatedRequestWithQuery<{ pro
       return;
     }
 
-    const member = await ProjectUsers.findOne({ where: { projectId, userId } });
+    const member = await ProjectUsers.findOne({ where: { projectId, id: memberId } });
 
     if (!member) {
       res.status(StatusCodes.NOT_FOUND).json({ error: 'Member not found' });
       return;
     }
 
-    const parsedMember = await getParsedMember(Number(projectId), Number(userId));
+    const parsedMember = await getParsedMember(Number(projectId), Number(member.userId));
     return res.json(parsedMember);
   } catch (err) {
     errorHandler(err, res);
@@ -230,7 +232,7 @@ export async function deleteMember(req: IAuthenticatedRequestWithQuery<{ id: str
 
     // 5. Null assigneeId param in all tasks assigned to member
     const memberTasks = await TasksModel.findAll({ where: { assigneeId: memberId } });
-    await Promise.all(memberTasks.map((task) => task.update({ assigneeId: null })));
+    if (memberTasks.length) await Promise.all(memberTasks?.map((task) => task.update({ assigneeId: null })));
 
     // 6. Delete member
 

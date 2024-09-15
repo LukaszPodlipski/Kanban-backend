@@ -84,6 +84,7 @@ export class UserResponse implements IUserResponse {
 export interface IMember extends IUserResponse {
   role: roleType;
   createdAt?: string;
+  userId: number;
 }
 
 export class Member implements IMember {
@@ -95,7 +96,7 @@ export class Member implements IMember {
   fullName: string;
   role: roleType;
   createdAt?: string;
-  memberId: number;
+  userId: number;
 
   constructor(data: IMember) {
     this.id = data.id;
@@ -106,6 +107,7 @@ export class Member implements IMember {
     this.avatarUrl = data.avatarUrl || '';
     this.role = data.role;
     this.createdAt = data.createdAt?.toString();
+    this.userId = data.userId;
   }
 }
 
