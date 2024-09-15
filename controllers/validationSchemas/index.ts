@@ -53,7 +53,7 @@ export const inviteMembersParamsSchema = yup.object().shape({
 
 export const updateColumnsBodySchema = yup.array().of(
   yup.object().shape({
-    id: yup.number().required('Column id is required').moreThan(0),
+    id: yup.number().nullable(),
     order: yup.number().required('Order is required').moreThan(0),
     name: yup.string().required('Name is required'),
     description: yup.string().nullable(),

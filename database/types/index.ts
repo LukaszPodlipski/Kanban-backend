@@ -379,7 +379,7 @@ export class TaskResponse implements ITaskResponse {
     this.comments = data.comments || [];
     this.history = data.history || [];
     this.createdAt = data.createdAt || null;
-    this.relatedTask = { ...data.relatedTask, relationMode: data.relationMode } || null;
+    this.relatedTask = { ...data.relatedTask, relationMode: data.relationMode };
   }
 }
 

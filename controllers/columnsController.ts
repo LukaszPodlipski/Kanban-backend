@@ -55,16 +55,27 @@ export async function createColumn(req: IAuthenticatedRequestWithQuery<{ project
 
     const order = columns.length + 1;
 
-    const column = await ProjectColumnsModel.create({
-      name,
-      projectId: Number(projectId),
-      order,
-    });
+    const column = handleColumnCreation({ name, projectId: Number(projectId), order });
 
     return res.status(StatusCodes.CREATED).json(column);
   } catch (err) {
     errorHandler(err, res);
   }
+}
+
+async function handleColumnCreation(columnData: Partial<IProjectColumn>) {
+  const { name, projectId, order, color, type, description } = columnData;
+
+  const column = await ProjectColumnsModel.create({
+    name,
+    color,
+    type,
+    description,
+    projectId: Number(projectId),
+    order,
+  });
+
+  return column;
 }
 
 /* -------------------------------- UPDATE COLUMNS --------------------------------- */
@@ -93,17 +104,27 @@ export async function updateColumns(req: IAuthenticatedRequestWithQuery<{ projec
 
         const columnToUpdate = await ProjectColumnsModel.findByPk(id);
 
-        if (!columnToUpdate) {
-          res.status(404).json({ error: 'Column not found' });
-          return;
-        }
-
         const WSpayload = {
           itemType: 'column',
           channel: 'ColumnsIndexChannel',
           channelParams: { projectId },
           receiversIds: permittedUsers,
         };
+
+        if (!id) {
+          const column = await handleColumnCreation({ name, projectId: Number(projectId), order, color, type, description });
+          sendWebSocketMessage({
+            ...WSpayload,
+            data: column,
+            messageType: 'create',
+          });
+          return;
+        }
+
+        if (!columnToUpdate) {
+          res.status(404).json({ error: 'Column not found' });
+          return;
+        }
 
         if (toDelete) {
           const tasksToUpdate = await TasksModel.findAll({ where: { projectColumnId: id } });
