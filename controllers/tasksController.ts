@@ -24,6 +24,7 @@ import TasksModel from '../database/models/tasks';
 import TaskCommentModel from '../database/models/taskComments';
 import TaskLogsModel from '../database/models/taskLogs';
 import ProjectColumnsModel from '../database/models/projectColumns';
+import ProjectsModel from '../database/models/projects';
 
 import { Op, WhereOptions, Sequelize } from 'sequelize';
 
@@ -185,10 +186,13 @@ export async function createTask(
 
     const columnTasks = await TasksModel.findAll({ where: { projectColumnId } });
     const lastTask = await TasksModel.findOne({
+      where: { projectId: projectId },
       order: [['createdAt', 'DESC']], // Sort by createdAt column in descending order
     });
 
-    const lastIdentifier = lastTask.identifier.split('-');
+    const project = await ProjectsModel.findByPk(projectId);
+
+    const lastIdentifier = lastTask?.identifier?.split('-') || [project?.prefix, 0];
 
     const order = columnTasks.length + 1;
     const createdById = req.user.id;
